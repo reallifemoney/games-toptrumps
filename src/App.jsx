@@ -422,6 +422,7 @@ export default function App() {
   const [showRoundResult, setShowRoundResult] = useState(false);
 
   const listenerRef = useRef(null);
+  const lastRoundKeyRef = useRef(null);
 
   useEffect(() => {
     const fontId = "lexend-font-link";
@@ -476,6 +477,28 @@ export default function App() {
       setScreen("game");
     }
   }, [room, screen]);
+
+  useEffect(() => {
+    if (!room) {
+      setShowRoundResult(false);
+      lastRoundKeyRef.current = null;
+      return;
+    }
+
+    if (!room.round || room.status !== "playing") {
+      setShowRoundResult(false);
+      lastRoundKeyRef.current = null;
+      return;
+    }
+
+    const roundKey = `${room.round.ts || "0"}-${room.round.category || ""}-${room.round.pickerId || ""}-${(room.round.winners || []).join(",")}`;
+
+    if (lastRoundKeyRef.current && lastRoundKeyRef.current !== roundKey) {
+      setShowRoundResult(true);
+    }
+
+    lastRoundKeyRef.current = roundKey;
+  }, [room?.round?.ts, room?.round?.category, room?.round?.pickerId, room?.round?.winners, room?.status]);
 
   function handleLogoClick() {
     if (logoTaps + 1 >= 5) {
@@ -655,7 +678,6 @@ useEffect(() => {
       log: [...(r.log || []), { text: logText, ts: Date.now() }].slice(-40),
     };
     await saveRoom(updated);
-    setShowRoundResult(true);
   }
 
   async function becomeSpectatorForCurrentGame() {
