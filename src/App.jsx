@@ -9,40 +9,87 @@ import {
 
 import logoImg from "./logo.png";
 
+// Import Manager Logos (update paths as needed)
+import fidelityLogo from "./fidelity.svg";
+import vanguardLogo from "./vanguard.svg";
+import lgLogo from "./lg.svg";
+import isharesLogo from "./ishares.svg";
+import wisdomtreeLogo from "./wisdomtree.svg";
+
 // ---------- Fund card data ----------
 const CARDS = [
-  { id: "mng-japan", name: "M&G Japan Fund Acc", manager: "M&G", color: "#0d8f6e", desc: "Invests in companies that are based in or do most of their business in Japan", risk: 6,
-    stats: { growth2025: 22.17, holdings: 60, esg: 4, cost: 0.47, countries: 1, growth2022: 6.25 } },
-  { id: "axa-tech", name: "AXA Framlington Global Tech Fund Acc", manager: "AXA", color: "#00147a", desc: "Invests in equities believed to benefit from increase in use of technology", risk: 6,
-    stats: { growth2025: 13.03, holdings: 48, esg: 3.5, cost: 0.82, countries: 6, growth2022: -29.70 } },
-  { id: "bg-em", name: "Baillie Gifford Emerging Markets Leading Acc", manager: "BG", color: "#1a1a1a", desc: "Holds companies from emerging countries believed to perform well in the future", risk: 7,
-    stats: { growth2025: 26.07, holdings: 52, esg: 3, cost: 0.78, countries: 9, growth2022: -16.43 } },
-  { id: "aegon-hy", name: "Aegon High Yield Bond Fund Acc", manager: "aegon", color: "#0057ff", desc: "Corporate bonds from across the world that give high interest (so higher risk)", risk: 4,
-    stats: { growth2025: 10.72, holdings: 163, esg: 3, cost: 0.58, countries: 12, growth2022: -9.27 } },
-  { id: "ark-ai", name: "ARK AI and Robotics ETF Acc", manager: "ARK", color: "#111111", desc: "Invests in companies that should benefit from increased use of AI & robotics", risk: 7,
-    stats: { growth2025: 28.96, holdings: 43, esg: 3, cost: 0.75, countries: 6, growth2022: null } },
-  { id: "hsbc-ftse", name: "HSBC FTSE 100 UK Index Fund Acc", manager: "HSBC", color: "#db0011", desc: "Invests in most companies in the FTSE 100 index (100 biggest companies in UK)", risk: 5,
-    stats: { growth2025: 25.49, holdings: 100, esg: 3, cost: 0.10, countries: 1, growth2022: 5.08 } },
-  { id: "artemis-eu", name: "Artemis SmartGARP European Equity Acc", manager: "Artemis", color: "#0b1f4d", desc: "Uses tech to pick strong European equities and adjusts plan to maximise growth", risk: 6,
-    stats: { growth2025: 55.90, holdings: 88, esg: 3, cost: 0.84, countries: 8, growth2022: 2.00 } },
-  { id: "br-mymap", name: "BlackRock MyMap 5 Select ESG Fund Acc", manager: "BlackRock", color: "#000000", desc: "Holds around 65% equity, 35% bonds and excludes any not meeting ESG criteria", risk: 5,
-    stats: { growth2025: 11.40, holdings: 5500, esg: 4, cost: 0.17, countries: 42, growth2022: -13.30 } },
-  { id: "rl-mmkt", name: "Royal London Short-Term Money Market Acc", manager: "Royal London", color: "#3d0e4f", desc: "Gains interest from cash deposits and very low risk Government bonds", risk: 1,
-    stats: { growth2025: 4.76, holdings: 66, esg: 4, cost: 0.10, countries: 8, growth2022: 1.69 } },
-  { id: "xtr-gold", name: "Xtrackers Physical Gold ETC", manager: "DWS", color: "#555555", desc: "Holds gold bars so you don't have to", risk: 7,
-    stats: { growth2025: 76.71, holdings: 1, esg: 3, cost: 0.25, countries: 1, growth2022: 6.89 } },
-  { id: "van-ls100", name: "Vanguard LifeStrategy 100% Equity Fund Acc", manager: "Vanguard", color: "#800000", desc: "Ready-made portfolio only containing equities", risk: 5,
-    stats: { growth2025: 16.04, holdings: 8660, esg: 3.5, cost: 0.20, countries: 50, growth2022: -6.25 } },
-  { id: "van-ls20", name: "Vanguard LifeStrategy 20% Equity Fund Acc", manager: "Vanguard", color: "#800000", desc: "Ready-made portfolio with around 80% in bonds", risk: 4,
-    stats: { growth2025: 7.20, holdings: 22000, esg: 3.5, cost: 0.20, countries: 50, growth2022: -15.84 } },
-  { id: "ishares-ffs", name: "iShares Developed World Fossil Fuel Screened Acc", manager: "iShares", color: "#6cb33f", desc: "Fund of equities that comply with certain ESG rules", risk: 5,
-    stats: { growth2025: 13.10, holdings: 1191, esg: 4, cost: 0.12, countries: 23, growth2022: -11.60 } },
-  { id: "abrdn-gcb", name: "abrdn Global Corp Bond Screened Tracker Acc", manager: "abrdn", color: "#000000", desc: "Fund of corporate bonds provided company meets ESG rules", risk: 4,
-    stats: { growth2025: 6.77, holdings: 9035, esg: 4, cost: 0.10, countries: 27, growth2022: -15.14 } },
-  { id: "aviva-mm", name: "Aviva Multi-Manager 40-85% Shares Inc", manager: "Aviva", color: "#ffd200", desc: "Manager decides how much equity to hold based on markets, between 40 and 85%", risk: 5,
-    stats: { growth2025: 12.31, holdings: 3750, esg: 3, cost: 1.27, countries: 42, growth2022: -9.37 } },
-  { id: "aegon-eth", name: "Aegon Ethical Equity Fund Acc", manager: "aegon", color: "#0057ff", desc: "Fund of equities that meet certain ESG criteria", risk: 6,
-    stats: { growth2025: 2.43, holdings: 64, esg: 4.5, cost: 0.77, countries: 5, growth2022: -22.41 } },
+  { 
+    id: "fid-world", 
+    name: "Fidelity Index World Fund P Acc", 
+    manager: "Fidelity", 
+    logo: fidelityLogo,
+    desc: "Invests in thousands of big companies across developed countries worldwide", 
+    risk: 5,
+    stats: { growth2025: 18.50, holdings: 1400, esg: 3.5, cost: 0.12, countries: 23, growth2022: -7.80 } 
+  },
+  { 
+    id: "van-allcap", 
+    name: "Vanguard FTSE Global All Cap Index Fund Acc", 
+    manager: "Vanguard", 
+    logo: vanguardLogo,
+    desc: "Owns a tiny slice of almost every public company in the world", 
+    risk: 5,
+    stats: { growth2025: 17.20, holdings: 7150, esg: 3.5, cost: 0.23, countries: 49, growth2022: -8.10 } 
+  },
+  { 
+    id: "lg-global-eq", 
+    name: "L&G Global Equity Index Fund", 
+    manager: "L&G", 
+    logo: lgLogo,
+    desc: "Spreads your money across hundreds of major international businesses", 
+    risk: 5,
+    stats: { growth2025: 18.10, holdings: 2200, esg: 3.5, cost: 0.13, countries: 23, growth2022: -7.90 } 
+  },
+  { 
+    id: "van-gb-bond", 
+    name: "Vanguard Global Bond Index Fund", 
+    manager: "Vanguard", 
+    logo: vanguardLogo,
+    desc: "Lends money to governments and big companies globally for steady returns", 
+    risk: 3,
+    stats: { growth2025: 5.30, holdings: 11200, esg: 3.5, cost: 0.15, countries: 55, growth2022: -12.50 } 
+  },
+  { 
+    id: "ish-agbp", 
+    name: "iShares Core Global Aggregate Bond UCITS ETF", 
+    manager: "iShares", 
+    logo: isharesLogo,
+    desc: "A giant collection of global loans designed to keep your money safer", 
+    risk: 3,
+    stats: { growth2025: 5.20, holdings: 11500, esg: 3.5, cost: 0.10, countries: 65, growth2022: -13.10 } 
+  },
+  { 
+    id: "van-smcap", 
+    name: "Vanguard Global Small-Cap Index Fund Acc", 
+    manager: "Vanguard", 
+    logo: vanguardLogo,
+    desc: "Focuses on smaller, up-and-coming companies worldwide for higher growth potential", 
+    risk: 6,
+    stats: { growth2025: 14.30, holdings: 4400, esg: 3.5, cost: 0.29, countries: 23, growth2022: -10.20 } 
+  },
+  { 
+    id: "lg-ispy", 
+    name: "L&G Cyber Security UCITS ETF", 
+    manager: "L&G", 
+    logo: lgLogo,
+    desc: "Invests in companies that protect computers and data from hackers", 
+    risk: 6,
+    stats: { growth2025: 21.60, holdings: 42, esg: 3, cost: 0.69, countries: 8, growth2022: -25.40 } 
+  },
+  { 
+    id: "wt-btc", 
+    name: "WisdomTree Physical Bitcoin", 
+    manager: "WisdomTree", 
+    logo: wisdomtreeLogo,
+    desc: "Tracks the price of Bitcoin directly for high-risk, high-reward growth", 
+    risk: 7,
+    stats: { growth2025: 45.20, holdings: 1, esg: 1, cost: 0.35, countries: 1, growth2022: -64.20 } 
+  },
 ];
 const CARD_MAP = Object.fromEntries(CARDS.map(c => [c.id, c]));
 
@@ -120,10 +167,11 @@ function FundCard({ card, interactive, onPick, highlightKey, dim }) {
       boxShadow: "0 6px 18px rgba(30,50,20,0.10)", opacity: dim ? 0.55 : 1, border: "2px solid #E3F0E1", margin: "0 auto",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-        <div style={{
-          width: 46, height: 46, borderRadius: 10, background: card.color, color: "#fff",
-          display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, flexShrink: 0,
-        }}>{card.manager.slice(0, 2).toUpperCase()}</div>
+        <img 
+          src={card.logo} 
+          alt={`${card.manager} logo`} 
+          style={{ width: 46, height: 46, borderRadius: 10, objectFit: "cover", flexShrink: 0 }} 
+        />
         <div style={{ fontWeight: 800, fontSize: 16, color: INK, lineHeight: 1.2 }}>{card.name}</div>
       </div>
       <div style={{ color: PURPLE, fontSize: 14, fontStyle: "italic", lineHeight: 1.35, margin: "10px 0 14px" }}>
@@ -187,7 +235,7 @@ function Modal({ title, onClose, children }) {
       }}>
         <div style={{
           padding: "16px 20px", borderBottom: "1px solid #EFF5EC", display: "flex",
-          justify: "space-between", alignItems: "center", background: MINT,
+          justifyContent: "space-between", alignItems: "center", background: MINT,
         }}>
           <div style={{ fontWeight: 800, fontSize: 18, color: INK }}>{title}</div>
           <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", padding: 4 }}>
@@ -308,7 +356,6 @@ export default function App() {
     setRoom(newRoom);
   }
 
-  // subscribe to live updates for the current room
   useEffect(() => {
     if (!roomCode) return;
     const roomRef = ref(db, `rooms/${roomCode}`);
@@ -449,7 +496,6 @@ export default function App() {
     if (room && (room.status === "playing" || room.status === "ended") && screen !== "game") setScreen("game");
   }, [room, screen]);
 
-  // ================= RENDER =================
   const wrap = { minHeight: "100vh", background: MINT, fontFamily: "'Lexend', sans-serif", padding: "16px 14px 60px" };
 
   return (
@@ -507,9 +553,6 @@ export default function App() {
               fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "'Lexend', sans-serif",
             }}>Join a game</button>
             {error && <div style={{ color: "#C0392B", fontSize: 13, marginTop: 12, textAlign: "center" }}>{error}</div>}
-          </div>
-          <div style={{ background: "#fff", borderRadius: 14, padding: 16, fontSize: 13, color: "#5A6B5A" }}>
-            <b>How it works:</b> one person hosts and shares the 4-letter code. Everyone joins on their own phone or laptop. On your turn, pick a stat from your top card — whoever's fund wins that stat takes all the cards. Most cards when the deck runs out wins!
           </div>
         </div>
       )}
@@ -592,7 +635,7 @@ export default function App() {
                 <div style={{ fontSize: 12, color: "#9AA89A", marginTop: 4 }}>Room {roomCode} {(room.pile || []).length > 0 && `· pot: ${(room.pile || []).length}`}</div>
               </div>
 
-              {/* scoreboard */}
+              {/* Scoreboard */}
               <div style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 14, paddingBottom: 2 }}>
                 {[...room.players].map(p => ({ ...p, count: (room.hands[p.id] || []).length })).sort((a, b) => b.count - a.count).map(p => (
                   <div key={p.id} style={{
