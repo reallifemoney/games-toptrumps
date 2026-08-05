@@ -89,6 +89,23 @@ function makeId() {
   return "p_" + Math.random().toString(36).slice(2, 10);
 }
 
+function launchWinnerConfetti() {
+  if (typeof window === "undefined") return;
+
+  const burst = () => {
+    confetti({
+      particleCount: 140,
+      spread: 90,
+      origin: { y: 0.55 },
+      colors: ["#71c558", "#8c52ff", "#FFD700"],
+      zIndex: 3000,
+    });
+  };
+
+  window.requestAnimationFrame(burst);
+  window.setTimeout(burst, 220);
+}
+
 function StatValue({ v }) {
   if (v === null || v === undefined) return <span style={{ color: AMBER, fontWeight: 700 }}>N/A</span>;
   const isNeg = typeof v === "string" && v.trim().startsWith("-");
@@ -432,25 +449,19 @@ export default function App() {
 
 // Fire confetti ONLY for the winning player when the game ends
 useEffect(() => {
-  if (room?.status === "ended" && room?.players) {
-    // Sort players to find the winner
-    const sorted = [...room.players].map(p => ({
-      ...p,
-      cardCount: (room.hands?.[p.id] || []).length
-    })).sort((a, b) => b.cardCount - a.cardCount);
+  if (room?.status !== "ended" || !room?.players) return;
 
-    const winnerId = sorted[0]?.id;
+  const sorted = [...room.players].map(p => ({
+    ...p,
+    cardCount: (room.hands?.[p.id] || []).length
+  })).sort((a, b) => b.cardCount - a.cardCount);
 
-    // Trigger confetti explosion ONLY if you are the winner
-    if (winnerId === myId) {
-      confetti({
-        particleCount: 120,
-        spread: 80,
-        origin: { y: 0.6 },
-        colors: ['#71c558', '#8c52ff', '#FFD700']
-      });
-    }
-  }
+  const winnerId = sorted[0]?.id;
+
+  if (winnerId !== myId) return;
+
+  const timer = window.setTimeout(() => launchWinnerConfetti(), 120);
+  return () => window.clearTimeout(timer);
 }, [room?.status, room?.players, room?.hands, myId]);
 
   async function joinGame(codeToJoin = null, asSpectator = false) {
@@ -596,6 +607,31 @@ useEffect(() => {
     cardCount: (room.hands?.[p.id] || []).length
   })).sort((a, b) => b.cardCount - a.cardCount) : [];
 
+  const roundSummary = room?.round
+    ? (() => {
+        if (room.round.isTie) {
+          return {
+            title: "Tie on the last round",
+            body: `Cards stayed in the pot. You now have ${myHand.length} cards.`,
+          };
+        }
+
+        const winner = room.players?.find(p => p.id === room.round.winners?.[0]);
+        if (winner?.id === myId) {
+          return {
+            title: "You won the last round!",
+            body: `You now have ${myHand.length} cards.`,
+          };
+        }
+
+        return {
+          title: `${winner?.name || "Someone"} won the last round`,
+          body: `You now have ${myHand.length} cards.`,
+        };
+      })()
+    : null;
+
+  const isHost = room?.hostId === myId;
   const wrap = { minHeight: "100vh", background: MINT, fontFamily: "'Lexend', sans-serif", padding: "18px 16px 60px" };
 
   return (
@@ -739,7 +775,7 @@ useEffect(() => {
               </div>
 
               {/* Reshuffle & Play Again Action */}
-              {room.hostId === myId ? (
+              {isHost ? (
                 <button 
                   onClick={reshuffleAndPlayAgain} 
                   style={{ 
@@ -773,6 +809,20 @@ useEffect(() => {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, padding: "0 4px" }}>
                 <span style={{ fontWeight: 800, color: INK }}>You have {myHand.length} cards</span>
                 {room.pile?.length > 0 && <span style={{ color: AMBER, fontWeight: 800 }}>Pot: {room.pile.length} cards</span>}
+              </div>
+
+              {/* Round result banner */}
+              <div style={{ background: isMyTurn ? GREEN_DK : "#fff", color: isMyTurn ? "#fff" : INK, padding: 14, borderRadius: 14, textAlign: "center", marginBottom: 16, fontWeight: 800, border: isMyTurn ? "none" : "2px solid #DCEEDA" }}>
+                {roundSummary ? (
+                  <>
+                    <div>{roundSummary.title}</div>
+                    <div style={{ fontSize: 14, marginTop: 4, fontWeight: 700, opacity: 0.95 }}>{roundSummary.body}</div>
+                  </>
+                ) : isMyTurn ? (
+                  "✨ Your Turn — Choose a Stat!"
+                ) : (
+                  `Waiting for ${room.players.find(p => p.id === room.pickerId)?.name || "player"}...`
+                )}
               </div>
 
               {/* Primary Card View */}
