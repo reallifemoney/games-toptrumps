@@ -67,6 +67,7 @@ const CATEGORIES = [
 
 const MINT = "#eef8eb", GREEN = "#71c558", GREEN_DK = "#3F7E27", PURPLE = "#8c52ff", INK = "#1F2A1F", AMBER = "#C1791C";
 
+// ---------- Global Helpers ----------
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -85,6 +86,7 @@ function makeId() {
   return "p_" + Math.random().toString(36).slice(2, 10);
 }
 
+// ---------- UI Sub-Components ----------
 function StatValue({ v }) {
   if (v === null || v === undefined) return <span style={{ color: AMBER, fontWeight: 700 }}>N/A</span>;
   const isNeg = typeof v === "string" && v.trim().startsWith("-");
@@ -149,11 +151,20 @@ function RiskScale({ risk }) {
   );
 }
 
-function FundCard({ card, interactive, onPick, highlightKey, dim }) {
+function FundCard({ card, interactive, onPick, highlightKey, dim, isMyTurn }) {
   return (
     <div style={{
-      background: "#fff", borderRadius: 22, padding: "26px 22px 18px", width: "100%", maxWidth: 380, boxSizing: "border-box",
-      boxShadow: "0 8px 24px rgba(30,50,20,0.12)", opacity: dim ? 0.55 : 1, border: "2px solid #E3F0E1", margin: "0 auto",
+      background: "#fff", 
+      borderRadius: 22, 
+      padding: "26px 22px 18px", 
+      width: "100%", 
+      maxWidth: 380, 
+      boxSizing: "border-box",
+      boxShadow: isMyTurn ? "0 0 0 4px #8c52ff, 0 12px 30px rgba(140,82,255,0.25)" : "0 8px 24px rgba(30,50,20,0.12)", 
+      opacity: dim ? 0.55 : 1, 
+      border: isMyTurn ? "3px solid #8c52ff" : "2px solid #E3F0E1", 
+      margin: "0 auto",
+      transition: "all 0.2s ease-in-out",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
         <img 
@@ -170,7 +181,7 @@ function FundCard({ card, interactive, onPick, highlightKey, dim }) {
 
       <RiskScale risk={card.risk} />
 
-      {/* Clean Horizontal Line Separator */}
+      {/* Horizontal Line Separator */}
       <hr style={{ border: "none", borderTop: "2px solid #EFF5EC", margin: "18px 0 12px" }} />
 
       <div>
@@ -313,68 +324,6 @@ function CardsBrowserModal({ onClose }) {
   );
 }
 
-// ---------- Main App Component ----------
-export default function App() {
-  const [screen, setScreen] = useState("home"); // home | lobby | game
-  const [myId] = useState(makeId);
-  const [nameInput, setNameInput] = useState("");
-  const [joinCodeInput, setJoinCodeInput] = useState("");
-  const [roomCode, setRoomCode] = useState("");
-  const [room, setRoom] = useState(null);
-  const [error, setError] = useState("");
-  const [copied, setCopied] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [showRules, setShowRules] = useState(false);
-  const [showBrowser, setShowBrowser] = useState(false);
-  const listenerRef = useRef(null);
-
-  useEffect(() => {
-    const fontId = "lexend-font-link";
-    if (!document.getElementById(fontId)) {
-      const link = document.createElement("link");
-      link.id = fontId;
-      link.rel = "stylesheet";
-      link.href = "https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700;800;900&display=swap";
-      document.head.appendChild(link);
-    }
-  }, []);
-
-  async function loadRoom(code) {
-    const snap = await get(ref(db, `rooms/${code}`));
-    return snap.exists() ? snap.val() : null;
-  }
-  async function saveRoom(newRoom) {
-    newRoom.updatedAt = Date.now();
-    await set(ref(db, `rooms/${newRoom.code}`), newRoom);
-    setRoom(newRoom);
-  }
-
-  useEffect(() => {
-    if (!roomCode) return;
-    const roomRef = ref(db, `rooms/${roomCode}`);
-    const handler = onValue(roomRef, snap => {
-      if (snap.exists()) setRoom(snap.val());
-    });
-    listenerRef.current = roomRef;
-    return () => off(roomRef, "value", handler);
-  }, [roomCode]);
-
-  async function hostGame() {
-    setError("");
-    if (!nameInput.trim()) return setError("Enter your name first");
-    setBusy(true);
-    const code = makeCode();
-    const me = { id: myId, name: nameInput.trim() };
-    const newRoom = {
-      code, status: "lobby", players: [me], hostId: myId, hands: {}, pickerId: myId, pile: [],
-      round: null, log: [{ text: `${me.name} created the room`, ts: Date.now() }],
-    };
-    await saveRoom(newRoom);
-    setRoomCode(code);
-    setScreen("lobby");
-    setBusy(false);
-  }
-
 function AdminModal({ onClose, onSpectate }) {
   const [allRooms, setAllRooms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -453,65 +402,129 @@ function AdminModal({ onClose, onSpectate }) {
   );
 }
 
-// Add state inside App()
-const [showAdmin, setShowAdmin] = useState(false);
-const [logoTaps, setLogoTaps] = useState(0);
+// ---------- Main App Component ----------
+export default function App() {
+  const [screen, setScreen] = useState("home"); // home | lobby | game
+  const [myId] = useState(makeId);
+  const [nameInput, setNameInput] = useState("");
+  const [joinCodeInput, setJoinCodeInput] = useState("");
+  const [roomCode, setRoomCode] = useState("");
+  const [room, setRoom] = useState(null);
+  const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [showRules, setShowRules] = useState(false);
+  const [showBrowser, setShowBrowser] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [logoTaps, setLogoTaps] = useState(0);
+  const listenerRef = useRef(null);
 
-// Secret Tap Handler on Logo
-function handleLogoClick() {
-  if (logoTaps + 1 >= 5) {
-    setShowAdmin(true);
-    setLogoTaps(0);
-  } else {
-    setLogoTaps(prev => prev + 1);
+  // Load Lexend font dynamically
+  useEffect(() => {
+    const fontId = "lexend-font-link";
+    if (!document.getElementById(fontId)) {
+      const link = document.createElement("link");
+      link.id = fontId;
+      link.rel = "stylesheet";
+      link.href = "https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700;800;900&display=swap";
+      document.head.appendChild(link);
+    }
+  }, []);
+
+  // ---- Firebase Helpers ----
+  async function loadRoom(code) {
+    const snap = await get(ref(db, `rooms/${code}`));
+    return snap.exists() ? snap.val() : null;
   }
-}
-
-// Modify joinGame check inside your App component:
-const handleJoinClick = () => {
-  if (joinCodeInput.toLowerCase() === "rlma") {
-    setShowAdmin(true);
-    setJoinCodeInput("");
-    return;
+  async function saveRoom(newRoom) {
+    newRoom.updatedAt = Date.now();
+    await set(ref(db, `rooms/${newRoom.code}`), newRoom);
+    setRoom(newRoom);
   }
-  joinGame();
-};
 
-async function joinGame(codeToJoin = null, asSpectator = false) {
-  setError("");
-  const code = (codeToJoin || joinCodeInput).trim().toUpperCase();
-  const name = nameInput.trim() || (asSpectator ? "Admin (Viewer)" : "");
-  
-  if (!code) return setError("Enter a room code");
-  if (!asSpectator && !name) return setError("Enter your name first");
-  
-  setBusy(true);
-  const r = await loadRoom(code);
-  if (!r) { setBusy(false); return setError("Room not found"); }
-  
-  // If not spectating and game already started, block them
-  if (r.status !== "lobby" && !asSpectator) {
+  // Subscribe to live updates for the current room
+  useEffect(() => {
+    if (!roomCode) return;
+    const roomRef = ref(db, `rooms/${roomCode}`);
+    const handler = onValue(roomRef, snap => {
+      if (snap.exists()) setRoom(snap.val());
+    });
+    listenerRef.current = roomRef;
+    return () => off(roomRef, "value", handler);
+  }, [roomCode]);
+
+  // ---- Game Logic Handlers ----
+  async function hostGame() {
+    setError("");
+    if (!nameInput.trim()) return setError("Enter your name first");
+    setBusy(true);
+    const code = makeCode();
+    const me = { id: myId, name: nameInput.trim() };
+    const newRoom = {
+      code, status: "lobby", players: [me], hostId: myId, hands: {}, pickerId: myId, pile: [],
+      round: null, log: [{ text: `${me.name} created the room`, ts: Date.now() }],
+    };
+    await saveRoom(newRoom);
+    setRoomCode(code);
+    setScreen("lobby");
     setBusy(false);
-    return setError("That game has already started");
   }
 
-  const me = { id: myId, name: asSpectator ? "👀 Admin" : name, isSpectator: asSpectator };
-  
-  // Don't duplicate player in list if re-joining
-  const existingPlayers = r.players || [];
-  const alreadyIn = existingPlayers.some(p => p.id === myId);
-  
-  const updated = { 
-    ...r, 
-    players: alreadyIn ? existingPlayers : [...existingPlayers, me],
-    log: [...(r.log || []), { text: `${me.name} ${asSpectator ? "joined as viewer" : "joined"}`, ts: Date.now() }] 
+  const handleJoinClick = () => {
+    // Hidden Admin Trigger via input
+    if (joinCodeInput.toLowerCase() === "rlma") {
+      setShowAdmin(true);
+      setJoinCodeInput(""); // clear input
+      return;
+    }
+    joinGame();
   };
-  
-  await saveRoom(updated);
-  setRoomCode(code);
-  setScreen("game");
-  setBusy(false);
-}
+
+  // Subtle Admin Access via logo taps
+  function handleLogoClick() {
+    if (logoTaps + 1 >= 5) {
+      setShowAdmin(true);
+      setLogoTaps(0);
+    } else {
+      setLogoTaps(prev => prev + 1);
+    }
+  }
+
+  async function joinGame(codeToJoin = null, asSpectator = false) {
+    setError("");
+    const code = (codeToJoin || joinCodeInput).trim().toUpperCase();
+    const name = nameInput.trim() || (asSpectator ? "Admin (Viewer)" : "");
+    
+    if (!code) return setError("Enter a room code");
+    if (!asSpectator && !name) return setError("Enter your name first");
+    
+    setBusy(true);
+    const r = await loadRoom(code);
+    if (!r) { setBusy(false); return setError("Room not found — check the code"); }
+    
+    // If not spectating and game already started, block them
+    if (r.status !== "lobby" && !asSpectator) {
+      setBusy(false);
+      return setError("That game has already started");
+    }
+
+    const me = { id: myId, name: asSpectator ? "👀 Admin" : name, isSpectator: asSpectator };
+    
+    // Don't duplicate player in list if re-joining
+    const existingPlayers = r.players || [];
+    const alreadyIn = existingPlayers.some(p => p.id === myId);
+    
+    const updated = { 
+      ...r, 
+      players: alreadyIn ? existingPlayers : [...existingPlayers, me],
+      log: [...(r.log || []), { text: `${me.name} ${asSpectator ? "joined as viewer" : "joined"}`, ts: Date.now() }] 
+    };
+    
+    await saveRoom(updated);
+    setRoomCode(code);
+    setScreen("game"); // Viewers jump straight to game view
+    setBusy(false);
+  }
 
   async function exitGame() {
     if (roomCode && room) {
@@ -611,6 +624,7 @@ async function joinGame(codeToJoin = null, asSpectator = false) {
     if (room && (room.status === "playing" || room.status === "ended") && screen !== "game") setScreen("game");
   }, [room, screen]);
 
+  // ================= RENDER =================
   const wrap = { minHeight: "100vh", background: MINT, fontFamily: "'Lexend', sans-serif", padding: "18px 16px 60px" };
 
   return (
@@ -643,17 +657,26 @@ async function joinGame(codeToJoin = null, asSpectator = false) {
 
       {showRules && <RulesModal onClose={() => setShowRules(false)} />}
       {showBrowser && <CardsBrowserModal onClose={() => setShowBrowser(false)} />}
+      {showAdmin && (
+        <AdminModal 
+          onClose={() => setShowAdmin(false)} 
+          onSpectate={(code) => {
+            setShowAdmin(false);
+            joinGame(code, true);
+          }}
+        />
+      )}
 
       {/* Screen 1: Home */}
       {screen === "home" && (
         <div style={{ maxWidth: 440, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 24 }}>
             <img 
-  src={logoImg} 
-  alt="Top Funds Logo" 
-  onClick={handleLogoClick}
-  style={{ maxHeight: 150, maxWidth: "100%", objectFit: "contain", cursor: "pointer" }} 
-/>
+              src={logoImg} 
+              alt="Top Funds Logo" 
+              onClick={handleLogoClick}
+              style={{ maxHeight: 150, maxWidth: "100%", objectFit: "contain", cursor: "pointer" }} 
+            />
           </div>
           <div style={{ background: "#fff", borderRadius: 20, padding: 24, boxShadow: "0 6px 18px rgba(30,50,20,0.08)", marginBottom: 16 }}>
             <label style={{ fontSize: 14, fontWeight: 700, color: INK }}>Your name</label>
@@ -668,7 +691,7 @@ async function joinGame(codeToJoin = null, asSpectator = false) {
             <div style={{ textAlign: "center", color: "#9AA89A", fontSize: 13, margin: "8px 0 14px" }}>— or join one —</div>
             <input value={joinCodeInput} onChange={e => setJoinCodeInput(e.target.value.toUpperCase())} placeholder="Room code" maxLength={4}
               style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", borderRadius: 12, border: "1.5px solid #DCEEDA", fontSize: 18, letterSpacing: 6, textAlign: "center", marginBottom: 12, textTransform: "uppercase", fontFamily: "'Lexend', sans-serif", fontWeight: 700 }} />
-            <button onClick={joinGame} disabled={busy} style={{
+            <button onClick={handleJoinClick} disabled={busy} style={{
               width: "100%", padding: "14px", borderRadius: 14, border: `2px solid ${PURPLE}`, background: "#fff", color: PURPLE,
               fontWeight: 800, fontSize: 16, cursor: "pointer", fontFamily: "'Lexend', sans-serif",
             }}>Join a game</button>
@@ -676,17 +699,6 @@ async function joinGame(codeToJoin = null, asSpectator = false) {
           </div>
         </div>
       )}
-
-{/* Amin modal */}
-      {showAdmin && (
-  <AdminModal 
-    onClose={() => setShowAdmin(false)} 
-    onSpectate={(code) => {
-      setShowAdmin(false);
-      joinGame(code, true);
-    }}
-  />
-)}
 
       {/* Screen 2: Lobby */}
       {screen === "lobby" && (
@@ -776,15 +788,72 @@ async function joinGame(codeToJoin = null, asSpectator = false) {
                 ))}
               </div>
 
-              <div style={{ textAlign: "center", marginBottom: 16, fontWeight: 700, color: room.pickerId === myId ? GREEN_DK : INK, fontSize: 16 }}>
-                {(room.hands[myId] || []).length === 0 ? "You're out of cards — spectating" : room.pickerId === myId ? "Your turn — tap a stat below to play it" : `Waiting for ${room.players.find(p => p.id === room.pickerId)?.name || "…"} to choose a stat`}
-              </div>
+              {/* Turn Banner & Card Display */}
+              {(() => {
+                const myCards = room.hands[myId] || [];
+                const isOut = myCards.length === 0;
+                const isSpectator = room.players.find(p => p.id === myId)?.isSpectator;
+                const isMyTurn = room.pickerId === myId && !isOut && !isSpectator;
+                const pickerName = room.players.find(p => p.id === room.pickerId)?.name || "another player";
+                const lastWinner = room.round?.winners?.[0];
+                const IWonLastRound = lastWinner === myId && !room.round?.isTie;
 
-              {(room.hands[myId] || [])[0] ? (
-                <FundCard card={CARD_MAP[(room.hands[myId] || [])[0]]} interactive={room.pickerId === myId} onPick={chooseCategory} />
-              ) : (
-                <CardBack />
-              )}
+                return (
+                  <>
+                    <div style={{ textAlign: "center", marginBottom: 16 }}>
+                      {isSpectator ? (
+                         <div style={{ background: MINT, border: `1.5px solid ${GREEN}`, padding: "12px 16px", borderRadius: 14 }}>
+                          <div style={{ fontWeight: 800, color: GREEN_DK, fontSize: 16 }}>
+                            Spectating Mode 👀
+                          </div>
+                          <div style={{ color: INK, fontSize: 14, marginTop: 2 }}>
+                            You are viewing this game. <span style={{color: PURPLE}}>Waiting for {pickerName} to pick a stat.</span>
+                          </div>
+                        </div>
+                      ) : isOut ? (
+                        <div style={{ background: "#FFF3E0", border: "1.5px solid #FFE0B2", padding: "12px 16px", borderRadius: 14 }}>
+                          <div style={{ fontWeight: 800, color: AMBER, fontSize: 16 }}>
+                            You're out of cards! 🍿
+                          </div>
+                          <div style={{ color: "#8D6E63", fontSize: 14, marginTop: 2 }}>
+                            Great effort! Sit back and spectate the rest of the battle.
+                          </div>
+                        </div>
+                      ) : isMyTurn ? (
+                        <div style={{ 
+                          background: PURPLE, 
+                          color: "#fff", 
+                          padding: "14px 18px", 
+                          borderRadius: 16, 
+                          boxShadow: "0 6px 18px rgba(140,82,255,0.3)"
+                        }}>
+                          <div style={{ fontWeight: 900, fontSize: 18, letterSpacing: 0.3 }}>
+                            {IWonLastRound ? "🎉 YOU WON THAT ROUND!" : "👉 YOUR TURN!"}
+                          </div>
+                          <div style={{ fontSize: 14, opacity: 0.95, marginTop: 2, fontWeight: 600 }}>
+                            {IWonLastRound ? "Your turn to pick a stat below" : "Choose your best stat from the card below"}
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ color: INK, fontWeight: 700, fontSize: 16, padding: "8px 0" }}>
+                          Waiting for <span style={{ color: PURPLE }}>{pickerName}</span> to pick a stat…
+                        </div>
+                      )}
+                    </div>
+
+                    {!isSpectator && myCards[0] ? (
+                      <FundCard 
+                        card={CARD_MAP[myCards[0]]} 
+                        interactive={isMyTurn} 
+                        onPick={chooseCategory}
+                        isMyTurn={isMyTurn} 
+                      />
+                    ) : (
+                      <CardBack />
+                    )}
+                  </>
+                );
+              })()}
 
               {room.round && (
                 <div style={{ marginTop: 20, background: "#fff", borderRadius: 18, padding: 16 }}>
