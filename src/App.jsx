@@ -7,8 +7,7 @@ import {
   Grid, LogOut, X, Search 
 } from "lucide-react";
 
-// Set your logo path here (assuming image is saved in src/public folder)
-import logoImg from "./logo.png"; // Replace or update path if needed
+import logoImg from "./logo.png";
 
 // ---------- Fund card data ----------
 const CARDS = [
@@ -56,7 +55,7 @@ const CATEGORIES = [
   { key: "growth2022", label: "2022 Growth", icon: TrendingDown, higherWins: true, fmt: v => (v === null || v === undefined ? "N/A" : `${v.toFixed(2)}%`) },
 ];
 
-const MINT = "#EAF6EA", GREEN = "#5FAE3A", GREEN_DK = "#3F7E27", PURPLE = "#6E4EE8", INK = "#1F2A1F", AMBER = "#C1791C";
+const MINT = "#eef8eb", GREEN = "#71c558", GREEN_DK = "#3F7E27", PURPLE = "#8c52ff", INK = "#1F2A1F", AMBER = "#C1791C";
 
 function shuffle(arr) {
   const a = [...arr];
@@ -96,15 +95,20 @@ function Stars({ n }) {
 
 function RiskScale({ risk }) {
   return (
-    <div style={{ display: "flex", gap: 4, margin: "8px 0 14px" }}>
-      {[1, 2, 3, 4, 5, 6, 7].map(n => (
-        <div key={n} style={{
-          width: 22, height: 22, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 12, fontWeight: 700,
-          background: n === risk ? PURPLE : "#EDEAF9",
-          color: n === risk ? "#fff" : "#B7ADE8",
-        }}>{n}</div>
-      ))}
+    <div style={{ margin: "14px 0 16px" }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: "#6B7C6B", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>
+        Risk Rating
+      </div>
+      <div style={{ display: "flex", gap: 4 }}>
+        {[1, 2, 3, 4, 5, 6, 7].map(n => (
+          <div key={n} style={{
+            width: 24, height: 24, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 12, fontWeight: 700,
+            background: n === risk ? PURPLE : "#EDEAF9",
+            color: n === risk ? "#fff" : "#B7ADE8",
+          }}>{n}</div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -112,17 +116,19 @@ function RiskScale({ risk }) {
 function FundCard({ card, interactive, onPick, highlightKey, dim }) {
   return (
     <div style={{
-      background: "#fff", borderRadius: 20, padding: "18px 18px 10px", width: "100%", maxWidth: 340, boxSizing: "border-box",
+      background: "#fff", borderRadius: 20, padding: "22px 20px 14px", width: "100%", maxWidth: 350, boxSizing: "border-box",
       boxShadow: "0 6px 18px rgba(30,50,20,0.10)", opacity: dim ? 0.55 : 1, border: "2px solid #E3F0E1", margin: "0 auto",
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
         <div style={{
-          width: 44, height: 44, borderRadius: 10, background: card.color, color: "#fff",
-          display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13, flexShrink: 0,
+          width: 46, height: 46, borderRadius: 10, background: card.color, color: "#fff",
+          display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, flexShrink: 0,
         }}>{card.manager.slice(0, 2).toUpperCase()}</div>
-        <div style={{ fontWeight: 800, fontSize: 15, color: INK, lineHeight: 1.15 }}>{card.name}</div>
+        <div style={{ fontWeight: 800, fontSize: 16, color: INK, lineHeight: 1.2 }}>{card.name}</div>
       </div>
-      <div style={{ color: PURPLE, fontSize: 12.5, fontStyle: "italic", marginBottom: 8 }}>{card.desc}</div>
+      <div style={{ color: PURPLE, fontSize: 14, fontStyle: "italic", lineHeight: 1.35, margin: "10px 0 14px" }}>
+        {card.desc}
+      </div>
       <RiskScale risk={card.risk} />
       <div>
         {CATEGORIES.map(cat => {
@@ -137,8 +143,8 @@ function FundCard({ card, interactive, onPick, highlightKey, dim }) {
               onClick={clickable ? () => onPick(cat.key) : undefined}
               style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "9px 6px", borderBottom: "1px solid #EFF5EC", cursor: clickable ? "pointer" : "default",
-                background: isHighlight ? "#EAF6EA" : "transparent", borderRadius: 8,
+                padding: "10px 8px", borderBottom: "1px solid #EFF5EC", cursor: clickable ? "pointer" : "default",
+                background: isHighlight ? MINT : "transparent", borderRadius: 8,
                 transition: "background 0.15s",
               }}
             >
@@ -159,10 +165,10 @@ function FundCard({ card, interactive, onPick, highlightKey, dim }) {
 function CardBack() {
   return (
     <div style={{
-      background: MINT, borderRadius: 20, border: "2px dashed #C7E2C4", width: "100%", maxWidth: 340, margin: "0 auto",
-      minHeight: 200, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
+      background: MINT, borderRadius: 20, border: "2px dashed #C7E2C4", width: "100%", maxWidth: 350, margin: "0 auto",
+      minHeight: 220, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
     }}>
-      <img src={logoImg} alt="Top Funds Logo" style={{ maxHeight: 60, maxWidth: "80%", objectFit: "contain" }} />
+      <img src={logoImg} alt="Top Funds Logo" style={{ maxHeight: 80, maxWidth: "85%", objectFit: "contain" }} />
     </div>
   );
 }
@@ -200,17 +206,17 @@ function RulesModal({ onClose }) {
   return (
     <Modal title="How to Play" onClose={onClose}>
       <div style={{ color: INK, fontSize: 14, lineHeight: 1.6 }}>
-        <p style={{ marginTop: 0 }}><b>Goal:</b> Win all the fund cards in the deck!</p>
+        <p style={{ marginTop: 0 }}><b>Goal:</b> Win all the cards in the deck!</p>
         
         <div style={{ background: MINT, padding: 12, borderRadius: 12, marginBottom: 12 }}>
-          <b>1. Pick a Stat:</b> On your turn, look at your top card and choose the stat you think is best (e.g., highest Growth or lowest Cost).
+          <b>1. Pick a Stat:</b> On your turn, look at your top card and choose the stat you think is best (e.g., highest growth or lowest cost).
         </div>
 
         <div style={{ background: MINT, padding: 12, borderRadius: 12, marginBottom: 12 }}>
-          <b>2. Compare Cards:</b> All players reveal their top card for that category:
+          <b>2. Compare Cards:</b> All players compare against that category of their top card:
           <ul style={{ margin: "6px 0 0", paddingLeft: 20 }}>
-            <li><b>Higher Wins:</b> Growth, Holdings, ESG Rating, Countries</li>
-            <li><b>Lower Wins:</b> Cost</li>
+            <li><b>Higher wins for:</b> Growth, Holdings, ESG Rating, Countries</li>
+            <li><b>Lower wins for:</b> Cost</li>
           </ul>
         </div>
 
@@ -218,12 +224,12 @@ function RulesModal({ onClose }) {
           <b>3. Win or Tie:</b>
           <ul style={{ margin: "6px 0 0", paddingLeft: 20 }}>
             <li>The winner takes all played cards and goes next.</li>
-            <li>In a <b>Tie</b>, cards go into the pot. The next round's winner gets the pot too!</li>
+            <li>In the event of a <b>tie</b>, cards go into the pot. The next round's winner gets the pot too!</li>
           </ul>
         </div>
 
         <p style={{ marginBottom: 0, textAlign: "center", color: PURPLE, fontWeight: 700 }}>
-          The last player remaining with cards wins the game!
+          The player that gets all the cards wins the game!
         </p>
       </div>
     </Modal>
@@ -248,7 +254,7 @@ function CardsBrowserModal({ onClose }) {
           placeholder="Search funds or managers..."
           style={{
             width: "100%", boxSizing: "border-box", padding: "10px 12px 10px 38px",
-            borderRadius: 10, border: "1.5px solid #DCEEDA", fontSize: 14,
+            borderRadius: 10, border: "1.5px solid #DCEEDA", fontSize: 14, fontFamily: "'Lexend', sans-serif",
           }}
         />
       </div>
@@ -278,6 +284,18 @@ export default function App() {
   const [showRules, setShowRules] = useState(false);
   const [showBrowser, setShowBrowser] = useState(false);
   const listenerRef = useRef(null);
+
+  // Load Lexend font dynamically
+  useEffect(() => {
+    const fontId = "lexend-font-link";
+    if (!document.getElementById(fontId)) {
+      const link = document.createElement("link");
+      link.id = fontId;
+      link.rel = "stylesheet";
+      link.href = "https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700;800&display=swap";
+      document.head.appendChild(link);
+    }
+  }, []);
 
   // ---- Firebase helpers ----
   async function loadRoom(code) {
@@ -335,7 +353,6 @@ export default function App() {
 
   async function exitGame() {
     if (roomCode && room) {
-      // Remove self from room players list if quitting active session
       const updatedPlayers = room.players.filter(p => p.id !== myId);
       if (updatedPlayers.length > 0) {
         const isHost = room.hostId === myId;
@@ -433,16 +450,15 @@ export default function App() {
   }, [room, screen]);
 
   // ================= RENDER =================
-  const wrap = { minHeight: "100vh", background: MINT, fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif", padding: "16px 14px 60px" };
+  const wrap = { minHeight: "100vh", background: MINT, fontFamily: "'Lexend', sans-serif", padding: "16px 14px 60px" };
 
   return (
     <div style={wrap}>
-      {/* Persistent Nav Actions across screens */}
       <div style={{ maxWidth: 460, margin: "0 auto 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         {screen !== "home" ? (
           <button onClick={exitGame} style={{
             display: "inline-flex", alignItems: "center", gap: 6, border: "1.5px solid #C7E2C4", background: "#fff",
-            padding: "6px 12px", borderRadius: 10, color: INK, fontSize: 13, fontWeight: 700, cursor: "pointer",
+            padding: "6px 12px", borderRadius: 10, color: INK, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'Lexend', sans-serif",
           }}>
             <LogOut size={15} /> Exit
           </button>
@@ -451,20 +467,19 @@ export default function App() {
         <div style={{ display: "flex", gap: 8 }}>
           <button onClick={() => setShowBrowser(true)} style={{
             display: "inline-flex", alignItems: "center", gap: 6, border: "1.5px solid #C7E2C4", background: "#fff",
-            padding: "6px 12px", borderRadius: 10, color: PURPLE, fontSize: 13, fontWeight: 700, cursor: "pointer",
+            padding: "6px 12px", borderRadius: 10, color: PURPLE, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'Lexend', sans-serif",
           }}>
             <Grid size={15} /> Browse Cards
           </button>
           <button onClick={() => setShowRules(true)} style={{
             display: "inline-flex", alignItems: "center", gap: 6, border: "1.5px solid #C7E2C4", background: "#fff",
-            padding: "6px 12px", borderRadius: 10, color: GREEN_DK, fontSize: 13, fontWeight: 700, cursor: "pointer",
+            padding: "6px 12px", borderRadius: 10, color: GREEN_DK, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'Lexend', sans-serif",
           }}>
             <HelpCircle size={15} /> Rules
           </button>
         </div>
       </div>
 
-      {/* Popups */}
       {showRules && <RulesModal onClose={() => setShowRules(false)} />}
       {showBrowser && <CardsBrowserModal onClose={() => setShowBrowser(false)} />}
 
@@ -472,24 +487,24 @@ export default function App() {
       {screen === "home" && (
         <div style={{ maxWidth: 420, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 20 }}>
-            <img src={logoImg} alt="Top Funds Logo" style={{ maxHeight: 110, maxWidth: "100%", objectFit: "contain" }} />
+            <img src={logoImg} alt="Top Funds Logo" style={{ maxHeight: 140, maxWidth: "100%", objectFit: "contain" }} />
           </div>
           <div style={{ background: "#fff", borderRadius: 18, padding: 20, boxShadow: "0 6px 18px rgba(30,50,20,0.08)", marginBottom: 16 }}>
             <label style={{ fontSize: 13, fontWeight: 700, color: INK }}>Your name</label>
             <input value={nameInput} onChange={e => setNameInput(e.target.value)} placeholder="e.g. Leo"
-              style={{ width: "100%", boxSizing: "border-box", marginTop: 6, marginBottom: 16, padding: "10px 12px", borderRadius: 10, border: "1.5px solid #DCEEDA", fontSize: 15 }} />
+              style={{ width: "100%", boxSizing: "border-box", marginTop: 6, marginBottom: 16, padding: "10px 12px", borderRadius: 10, border: "1.5px solid #DCEEDA", fontSize: 15, fontFamily: "'Lexend', sans-serif" }} />
 
             <button onClick={hostGame} disabled={busy} style={{
               width: "100%", padding: "12px", borderRadius: 12, border: "none", background: GREEN, color: "#fff",
-              fontWeight: 800, fontSize: 15, cursor: "pointer", marginBottom: 14,
+              fontWeight: 800, fontSize: 15, cursor: "pointer", marginBottom: 14, fontFamily: "'Lexend', sans-serif",
             }}>Host a new game</button>
 
             <div style={{ textAlign: "center", color: "#9AA89A", fontSize: 12, margin: "6px 0 12px" }}>— or join one —</div>
             <input value={joinCodeInput} onChange={e => setJoinCodeInput(e.target.value.toUpperCase())} placeholder="Room code" maxLength={4}
-              style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: 10, border: "1.5px solid #DCEEDA", fontSize: 15, letterSpacing: 4, textAlign: "center", marginBottom: 10, textTransform: "uppercase" }} />
+              style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: 10, border: "1.5px solid #DCEEDA", fontSize: 15, letterSpacing: 4, textAlign: "center", marginBottom: 10, textTransform: "uppercase", fontFamily: "'Lexend', sans-serif" }} />
             <button onClick={joinGame} disabled={busy} style={{
               width: "100%", padding: "12px", borderRadius: 12, border: `2px solid ${PURPLE}`, background: "#fff", color: PURPLE,
-              fontWeight: 800, fontSize: 15, cursor: "pointer",
+              fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "'Lexend', sans-serif",
             }}>Join a game</button>
             {error && <div style={{ color: "#C0392B", fontSize: 13, marginTop: 12, textAlign: "center" }}>{error}</div>}
           </div>
@@ -507,7 +522,7 @@ export default function App() {
           ) : (
             <>
               <div style={{ textAlign: "center", marginBottom: 20 }}>
-                <img src={logoImg} alt="Top Funds Logo" style={{ maxHeight: 75, maxWidth: "100%", objectFit: "contain", marginBottom: 12 }} />
+                <img src={logoImg} alt="Top Funds Logo" style={{ maxHeight: 95, maxWidth: "100%", objectFit: "contain", marginBottom: 12 }} />
                 <div style={{ fontSize: 13, color: "#6B7C6B", marginBottom: 4 }}>Room code</div>
                 <div onClick={copyCode} style={{
                   fontSize: 44, fontWeight: 900, letterSpacing: 8, color: PURPLE, cursor: "pointer",
@@ -531,7 +546,7 @@ export default function App() {
                   <button onClick={startGame} disabled={room.players.length < 2} style={{
                     width: "100%", marginTop: 16, padding: "12px", borderRadius: 12, border: "none",
                     background: room.players.length < 2 ? "#CBE3C7" : GREEN, color: "#fff", fontWeight: 800, fontSize: 15,
-                    cursor: room.players.length < 2 ? "default" : "pointer",
+                    cursor: room.players.length < 2 ? "default" : "pointer", fontFamily: "'Lexend', sans-serif",
                   }}>{room.players.length < 2 ? "Waiting for more players…" : `Start game (${room.players.length} players, ${CARDS.length} cards)`}</button>
                 ) : (
                   <div style={{ marginTop: 16, textAlign: "center", color: "#6B7C6B", fontSize: 13.5 }}>Waiting for the host to start the game…</div>
@@ -566,14 +581,14 @@ export default function App() {
               {room.hostId === myId && (
                 <button onClick={playAgain} style={{
                   marginTop: 20, padding: "12px 20px", borderRadius: 12, border: "none", background: GREEN, color: "#fff",
-                  fontWeight: 800, fontSize: 15, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8,
+                  fontWeight: 800, fontSize: 15, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, fontFamily: "'Lexend', sans-serif",
                 }}><RefreshCw size={16} /> Reshuffle & play again</button>
               )}
             </div>
           ) : (
             <>
               <div style={{ textAlign: "center", marginBottom: 12 }}>
-                <img src={logoImg} alt="Top Funds Logo" style={{ maxHeight: 50, maxWidth: "100%", objectFit: "contain" }} />
+                <img src={logoImg} alt="Top Funds Logo" style={{ maxHeight: 65, maxWidth: "100%", objectFit: "contain" }} />
                 <div style={{ fontSize: 12, color: "#9AA89A", marginTop: 4 }}>Room {roomCode} {(room.pile || []).length > 0 && `· pot: ${(room.pile || []).length}`}</div>
               </div>
 
@@ -609,7 +624,7 @@ export default function App() {
                     return (
                       <div key={p.id} style={{
                         display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 8px",
-                        borderRadius: 8, background: won ? "#EAF6EA" : "transparent", marginBottom: 4,
+                        borderRadius: 8, background: won ? MINT : "transparent", marginBottom: 4,
                       }}>
                         <span style={{ fontSize: 13, color: INK }}>{p.name}: {c.name}</span>
                         <span style={{ fontWeight: 800, color: won ? GREEN_DK : "#9AA89A" }}>{cat.fmt(room.round.values[p.id])}{won && !room.round.isTie ? " 🏆" : ""}</span>
