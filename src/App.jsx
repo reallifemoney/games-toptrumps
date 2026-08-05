@@ -9,6 +9,8 @@ import {
 
 import logoImg from "./logo.png";
 
+import confetti from "canvas-confetti";
+
 // Import Manager Logos
 import fidelityLogo from "./fidelity.png";
 import vanguardLogo from "./vanguard.png";
@@ -427,6 +429,29 @@ export default function App() {
     }
     joinGame();
   };
+
+// Fire confetti ONLY for the winning player when the game ends
+useEffect(() => {
+  if (room?.status === "ended" && room?.players) {
+    // Sort players to find the winner
+    const sorted = [...room.players].map(p => ({
+      ...p,
+      cardCount: (room.hands?.[p.id] || []).length
+    })).sort((a, b) => b.cardCount - a.cardCount);
+
+    const winnerId = sorted[0]?.id;
+
+    // Trigger confetti explosion ONLY if you are the winner
+    if (winnerId === myId) {
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ['#71c558', '#8c52ff', '#FFD700']
+      });
+    }
+  }
+}, [room?.status, room?.players, room?.hands, myId]);
 
   async function joinGame(codeToJoin = null, asSpectator = false) {
     setError("");
