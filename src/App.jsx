@@ -4,7 +4,7 @@ import { db } from "./firebase";
 import { 
   TrendingUp, TrendingDown, Layers, Leaf, Coins, Globe2, Crown, 
   Users, Copy, Check, RefreshCw, Trophy, Sparkles, HelpCircle, 
-  Grid, LogOut, X, Search 
+  Grid, LogOut, X, Search, Eye
 } from "lucide-react";
 
 import logoImg from "./logo.png";
@@ -65,9 +65,8 @@ const CATEGORIES = [
   { key: "growth2022", label: "2022 Growth", icon: TrendingDown, higherWins: true, fmt: v => (v === null || v === undefined ? "N/A" : `${v.toFixed(2)}%`) },
 ];
 
-const MINT = "#eef8eb", GREEN = "#71c558", GREEN_DK = "#3F7E27", PURPLE = "#8c52ff", INK = "#1F2A1F", AMBER = "#C1791C";
+const MINT = "#eef8eb", GREEN = "#71c558", GREEN_DK = "#3F7E27", PURPLE = "#8c52ff", INK = "#1F2A1F", AMBER = "#C1791C", RED = "#E53935";
 
-// ---------- Global Helpers ----------
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -76,17 +75,18 @@ function shuffle(arr) {
   }
   return a;
 }
+
 function makeCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let c = "";
   for (let i = 0; i < 4; i++) c += chars[Math.floor(Math.random() * chars.length)];
   return c;
 }
+
 function makeId() {
   return "p_" + Math.random().toString(36).slice(2, 10);
 }
 
-// ---------- UI Sub-Components ----------
 function StatValue({ v }) {
   if (v === null || v === undefined) return <span style={{ color: AMBER, fontWeight: 700 }}>N/A</span>;
   const isNeg = typeof v === "string" && v.trim().startsWith("-");
@@ -95,14 +95,8 @@ function StatValue({ v }) {
 
 function StarIcon({ fillPercentage }) {
   const gradientId = React.useId();
-
   return (
-    <svg 
-      width="18" 
-      height="18" 
-      viewBox="0 0 24 24" 
-      style={{ marginRight: 2, verticalAlign: "middle" }}
-    >
+    <svg width="18" height="18" viewBox="0 0 24 24" style={{ marginRight: 2, verticalAlign: "middle" }}>
       <defs>
         <linearGradient id={gradientId}>
           <stop offset={`${fillPercentage}%`} stopColor={GREEN_DK} />
@@ -151,20 +145,12 @@ function RiskScale({ risk }) {
   );
 }
 
-function FundCard({ card, interactive, onPick, highlightKey, dim, isMyTurn }) {
+function FundCard({ card, interactive, onPick, highlightKey, dim }) {
+  if (!card) return null;
   return (
     <div style={{
-      background: "#fff", 
-      borderRadius: 22, 
-      padding: "26px 22px 18px", 
-      width: "100%", 
-      maxWidth: 380, 
-      boxSizing: "border-box",
-      boxShadow: isMyTurn ? "0 0 0 4px #8c52ff, 0 12px 30px rgba(140,82,255,0.25)" : "0 8px 24px rgba(30,50,20,0.12)", 
-      opacity: dim ? 0.55 : 1, 
-      border: isMyTurn ? "3px solid #8c52ff" : "2px solid #E3F0E1", 
-      margin: "0 auto",
-      transition: "all 0.2s ease-in-out",
+      background: "#fff", borderRadius: 22, padding: "26px 22px 18px", width: "100%", maxWidth: 380, boxSizing: "border-box",
+      boxShadow: "0 8px 24px rgba(30,50,20,0.12)", opacity: dim ? 0.55 : 1, border: "2px solid #E3F0E1", margin: "0 auto",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
         <img 
@@ -181,15 +167,14 @@ function FundCard({ card, interactive, onPick, highlightKey, dim, isMyTurn }) {
 
       <RiskScale risk={card.risk} />
 
-      {/* Horizontal Line Separator */}
       <hr style={{ border: "none", borderTop: "2px solid #EFF5EC", margin: "18px 0 12px" }} />
 
       <div>
         {CATEGORIES.map(cat => {
-          const raw = card.stats[cat.key];
+          const raw = card.stats ? card.stats[cat.key] : null;
           const isHighlight = highlightKey === cat.key;
           const Icon = cat.icon;
-          const body = cat.key === "esg" ? <Stars n={raw} /> : <StatValue v={cat.fmt(raw)} />;
+          const body = cat.key === "esg" ? <Stars n={raw} /> : <StatValue v={raw !== null && raw !== undefined ? cat.fmt(raw) : "N/A"} />;
           const clickable = interactive && typeof onPick === "function";
           return (
             <div
@@ -216,18 +201,7 @@ function FundCard({ card, interactive, onPick, highlightKey, dim, isMyTurn }) {
   );
 }
 
-function CardBack() {
-  return (
-    <div style={{
-      background: MINT, borderRadius: 22, border: "2px dashed #C7E2C4", width: "100%", maxWidth: 380, margin: "0 auto",
-      minHeight: 240, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
-    }}>
-      <img src={logoImg} alt="Top Funds Logo" style={{ maxHeight: 90, maxWidth: "85%", objectFit: "contain" }} />
-    </div>
-  );
-}
-
-// ---------- Modal Components ----------
+// ---------- Modals ----------
 function Modal({ title, onClose, children }) {
   return (
     <div style={{
@@ -241,7 +215,7 @@ function Modal({ title, onClose, children }) {
       }}>
         <div style={{
           padding: "18px 22px", borderBottom: "1px solid #EFF5EC", display: "flex",
-          justifyContent: "space-between", alignItems: "center", background: MINT,
+          justifySpace: "between", alignItems: "center", background: MINT,
         }}>
           <div style={{ fontWeight: 800, fontSize: 20, color: INK }}>{title}</div>
           <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", padding: 4 }}>
@@ -261,30 +235,23 @@ function RulesModal({ onClose }) {
     <Modal title="How to Play" onClose={onClose}>
       <div style={{ color: INK, fontSize: 15, lineHeight: 1.65 }}>
         <p style={{ marginTop: 0 }}><b>Goal:</b> Win all the cards in the deck!</p>
-        
         <div style={{ background: MINT, padding: 14, borderRadius: 14, marginBottom: 14 }}>
-          <b>1. Pick a Stat:</b> On your turn, look at your top card and choose the stat you think is best (e.g., highest growth or lowest cost).
+          <b>1. Pick a Stat:</b> On your turn, look at your top card and choose the stat you think is best.
         </div>
-
         <div style={{ background: MINT, padding: 14, borderRadius: 14, marginBottom: 14 }}>
-          <b>2. Compare Cards:</b> All players compare against that category of their top card:
+          <b>2. Compare Cards:</b> All players compare their top card stats:
           <ul style={{ margin: "8px 0 0", paddingLeft: 22 }}>
             <li><b>Higher wins for:</b> Growth, Holdings, ESG Rating, Countries</li>
             <li><b>Lower wins for:</b> Cost</li>
           </ul>
         </div>
-
         <div style={{ background: MINT, padding: 14, borderRadius: 14, marginBottom: 14 }}>
           <b>3. Win or Tie:</b>
           <ul style={{ margin: "8px 0 0", paddingLeft: 22 }}>
-            <li>The winner takes all played cards and goes next.</li>
-            <li>In the event of a <b>tie</b>, cards go into the pot. The next round's winner gets the pot too!</li>
+            <li>The winner takes all played cards and picks next.</li>
+            <li>In a <b>tie</b>, cards stay in the pot for the next winner!</li>
           </ul>
         </div>
-
-        <p style={{ marginBottom: 0, textAlign: "center", color: PURPLE, fontWeight: 700, fontSize: 16 }}>
-          The player that gets all the cards wins the game!
-        </p>
       </div>
     </Modal>
   );
@@ -316,9 +283,6 @@ function CardsBrowserModal({ onClose }) {
         {filtered.map(card => (
           <FundCard key={card.id} card={card} interactive={false} />
         ))}
-        {filtered.length === 0 && (
-          <div style={{ textAlign: "center", color: "#9AA89A", padding: 20, fontSize: 15 }}>No funds matching "{filter}"</div>
-        )}
       </div>
     </Modal>
   );
@@ -334,7 +298,6 @@ function AdminModal({ onClose, onSpectate }) {
       if (snap.exists()) {
         const data = snap.val();
         const list = Object.keys(data).map(code => ({ code, ...data[code] }));
-        // Sort most recently updated first
         list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
         setAllRooms(list);
       } else {
@@ -347,10 +310,6 @@ function AdminModal({ onClose, onSpectate }) {
 
   return (
     <Modal title="🛡️ Admin Control Panel" onClose={onClose}>
-      <div style={{ fontSize: 14, color: "#6B7C6B", marginBottom: 16 }}>
-        Live Firebase Room Monitoring
-      </div>
-      
       {loading ? (
         <div style={{ textAlign: "center", padding: 20 }}>Loading live rooms...</div>
       ) : allRooms.length === 0 ? (
@@ -358,42 +317,19 @@ function AdminModal({ onClose, onSpectate }) {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {allRooms.map(r => (
-            <div key={r.code} style={{
-              background: MINT, padding: 16, borderRadius: 14, border: "1.5px solid #C7E2C4",
-              display: "flex", flexDirection: "column", gap: 8
-            }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div key={r.code} style={{ background: MINT, padding: 16, borderRadius: 14, border: "1.5px solid #C7E2C4" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                 <div>
-                  <span style={{ fontWeight: 900, fontSize: 18, color: PURPLE, marginRight: 10 }}>
-                    {r.code}
-                  </span>
-                  <span style={{
-                    fontSize: 12, fontWeight: 800, textTransform: "uppercase", padding: "3px 8px", borderRadius: 6,
-                    background: r.status === "playing" ? GREEN : r.status === "ended" ? "#E0E0E0" : "#EBF3E8",
-                    color: r.status === "playing" ? "#fff" : INK
-                  }}>
+                  <span style={{ fontWeight: 900, fontSize: 18, color: PURPLE, marginRight: 8 }}>{r.code}</span>
+                  <span style={{ fontSize: 11, fontWeight: 800, padding: "2px 6px", borderRadius: 4, background: r.status === "playing" ? GREEN : "#E0E0E0", color: "#fff" }}>
                     {r.status}
                   </span>
                 </div>
-                
-                <button 
-                  onClick={() => onSpectate(r.code)}
-                  style={{
-                    padding: "6px 14px", borderRadius: 10, border: `1.5px solid ${PURPLE}`, background: "#fff",
-                    color: PURPLE, fontWeight: 700, fontSize: 13, cursor: "pointer"
-                  }}
-                >
+                <button onClick={() => onSpectate(r.code)} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${PURPLE}`, background: "#fff", color: PURPLE, fontWeight: 700, cursor: "pointer" }}>
                   Spectate
                 </button>
               </div>
-
-              <div style={{ fontSize: 13, color: INK }}>
-                <b>Players ({r.players?.length || 0}):</b> {r.players?.map(p => p.name).join(", ")}
-              </div>
-              
-              <div style={{ fontSize: 12, color: "#9AA89A" }}>
-                Cards remaining: {Object.values(r.hands || {}).reduce((acc, h) => acc + h.length, 0)}
-              </div>
+              <div style={{ fontSize: 13, color: INK }}><b>Players:</b> {r.players?.map(p => p.name).join(", ")}</div>
             </div>
           ))}
         </div>
@@ -404,7 +340,7 @@ function AdminModal({ onClose, onSpectate }) {
 
 // ---------- Main App Component ----------
 export default function App() {
-  const [screen, setScreen] = useState("home"); // home | lobby | game
+  const [screen, setScreen] = useState("home"); 
   const [myId] = useState(makeId);
   const [nameInput, setNameInput] = useState("");
   const [joinCodeInput, setJoinCodeInput] = useState("");
@@ -417,9 +353,9 @@ export default function App() {
   const [showBrowser, setShowBrowser] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [logoTaps, setLogoTaps] = useState(0);
+
   const listenerRef = useRef(null);
 
-  // Load Lexend font dynamically
   useEffect(() => {
     const fontId = "lexend-font-link";
     if (!document.getElementById(fontId)) {
@@ -431,18 +367,17 @@ export default function App() {
     }
   }, []);
 
-  // ---- Firebase Helpers ----
   async function loadRoom(code) {
     const snap = await get(ref(db, `rooms/${code}`));
     return snap.exists() ? snap.val() : null;
   }
+  
   async function saveRoom(newRoom) {
     newRoom.updatedAt = Date.now();
     await set(ref(db, `rooms/${newRoom.code}`), newRoom);
     setRoom(newRoom);
   }
 
-  // Subscribe to live updates for the current room
   useEffect(() => {
     if (!roomCode) return;
     const roomRef = ref(db, `rooms/${roomCode}`);
@@ -453,7 +388,21 @@ export default function App() {
     return () => off(roomRef, "value", handler);
   }, [roomCode]);
 
-  // ---- Game Logic Handlers ----
+  useEffect(() => {
+    if (room && (room.status === "playing" || room.status === "ended") && screen !== "game") {
+      setScreen("game");
+    }
+  }, [room, screen]);
+
+  function handleLogoClick() {
+    if (logoTaps + 1 >= 5) {
+      setShowAdmin(true);
+      setLogoTaps(0);
+    } else {
+      setLogoTaps(prev => prev + 1);
+    }
+  }
+
   async function hostGame() {
     setError("");
     if (!nameInput.trim()) return setError("Enter your name first");
@@ -471,24 +420,13 @@ export default function App() {
   }
 
   const handleJoinClick = () => {
-    // Hidden Admin Trigger via input
     if (joinCodeInput.toLowerCase() === "rlma") {
       setShowAdmin(true);
-      setJoinCodeInput(""); // clear input
+      setJoinCodeInput("");
       return;
     }
     joinGame();
   };
-
-  // Subtle Admin Access via logo taps
-  function handleLogoClick() {
-    if (logoTaps + 1 >= 5) {
-      setShowAdmin(true);
-      setLogoTaps(0);
-    } else {
-      setLogoTaps(prev => prev + 1);
-    }
-  }
 
   async function joinGame(codeToJoin = null, asSpectator = false) {
     setError("");
@@ -500,17 +438,14 @@ export default function App() {
     
     setBusy(true);
     const r = await loadRoom(code);
-    if (!r) { setBusy(false); return setError("Room not found — check the code"); }
+    if (!r) { setBusy(false); return setError("Room not found"); }
     
-    // If not spectating and game already started, block them
     if (r.status !== "lobby" && !asSpectator) {
       setBusy(false);
       return setError("That game has already started");
     }
 
     const me = { id: myId, name: asSpectator ? "👀 Admin" : name, isSpectator: asSpectator };
-    
-    // Don't duplicate player in list if re-joining
     const existingPlayers = r.players || [];
     const alreadyIn = existingPlayers.some(p => p.id === myId);
     
@@ -522,20 +457,19 @@ export default function App() {
     
     await saveRoom(updated);
     setRoomCode(code);
-    setScreen("game"); // Viewers jump straight to game view
+    setScreen(r.status === "playing" ? "game" : "lobby"); 
     setBusy(false);
   }
 
   async function exitGame() {
     if (roomCode && room) {
-      const updatedPlayers = room.players.filter(p => p.id !== myId);
+      const updatedPlayers = (room.players || []).filter(p => p.id !== myId);
       if (updatedPlayers.length > 0) {
         const isHost = room.hostId === myId;
         const updatedRoom = {
           ...room,
           players: updatedPlayers,
           hostId: isHost ? updatedPlayers[0].id : room.hostId,
-          log: [...(room.log || []), { text: `${room.players.find(p => p.id === myId)?.name || 'A player'} left the game`, ts: Date.now() }],
         };
         await saveRoom(updatedRoom);
       }
@@ -564,18 +498,21 @@ export default function App() {
   async function chooseCategory(catKey) {
     const r = await loadRoom(roomCode);
     if (!r || r.status !== "playing") return;
-    const active = r.players.filter(p => (r.hands[p.id] || []).length > 0);
+    const active = r.players.filter(p => (r.hands?.[p.id] || []).length > 0);
     if (r.pickerId !== myId || active.length < 2) return;
+    
     const cat = CATEGORIES.find(c => c.key === catKey);
     const revealed = {};
     active.forEach(p => { revealed[p.id] = r.hands[p.id][0]; });
     const values = {};
-    active.forEach(p => { values[p.id] = CARD_MAP[revealed[p.id]].stats[catKey]; });
+    active.forEach(p => { values[p.id] = CARD_MAP[revealed[p.id]]?.stats?.[catKey]; });
+    
     const scored = active.map(p => {
       const v = values[p.id];
       const s = (v === null || v === undefined) ? (cat.higherWins ? -Infinity : Infinity) : v;
       return { pid: p.id, s };
     });
+    
     const best = cat.higherWins ? Math.max(...scored.map(e => e.s)) : Math.min(...scored.map(e => e.s));
     const winners = scored.filter(e => e.s === best).map(e => e.pid);
     const isTie = winners.length > 1;
@@ -584,17 +521,19 @@ export default function App() {
     active.forEach(p => { newHands[p.id] = newHands[p.id].slice(1); });
     let newPile = [...(r.pile || [])];
     let logText;
+
     if (isTie) {
       active.forEach(p => newPile.push(revealed[p.id]));
-      logText = `Tie on ${cat.label}! ${newPile.length} card${newPile.length === 1 ? "" : "s"} sitting in the pot.`;
+      logText = `Tie on ${cat.label}! ${newPile.length} cards in the pot.`;
     } else {
       const winnerId = winners[0];
-      const winnerName = r.players.find(p => p.id === winnerId).name;
+      const winnerName = r.players.find(p => p.id === winnerId)?.name || "Player";
       const wonCards = shuffle([...active.map(p => revealed[p.id]), ...newPile]);
       newHands[winnerId] = [...newHands[winnerId], ...wonCards];
       newPile = [];
-      logText = `${winnerName} won the round on ${cat.label}!`;
+      logText = `${winnerName} won round on ${cat.label}!`;
     }
+
     const stillActive = r.players.filter(p => (newHands[p.id] || []).length > 0);
     let nextPicker = isTie ? r.pickerId : winners[0];
     if (!stillActive.some(p => p.id === nextPicker)) nextPicker = stillActive[0]?.id;
@@ -605,13 +544,9 @@ export default function App() {
     const updated = {
       ...r, hands: newHands, pile: newPile, pickerId: nextPicker, status,
       round: { category: catKey, revealed, values, winners, isTie, ts: Date.now() },
-      log: [...r.log, { text: logText, ts: Date.now() }].slice(-40),
+      log: [...(r.log || []), { text: logText, ts: Date.now() }].slice(-40),
     };
     await saveRoom(updated);
-  }
-
-  async function playAgain() {
-    await startGame();
   }
 
   function copyCode() {
@@ -620,36 +555,32 @@ export default function App() {
     setTimeout(() => setCopied(false), 1500);
   }
 
-  useEffect(() => {
-    if (room && (room.status === "playing" || room.status === "ended") && screen !== "game") setScreen("game");
-  }, [room, screen]);
+  // Safe checks for rendering game view
+  const myHand = room?.hands?.[myId] || [];
+  const activeCard = myHand[0] ? CARD_MAP[myHand[0]] : null;
+  const isMyTurn = room?.pickerId === myId;
+  const isSpectator = room?.players?.find(p => p.id === myId)?.isSpectator;
+  const winnerPlayer = room?.status === "ended" 
+    ? room.players.find(p => (room.hands?.[p.id] || []).length > 0) 
+    : null;
 
-  // ================= RENDER =================
   const wrap = { minHeight: "100vh", background: MINT, fontFamily: "'Lexend', sans-serif", padding: "18px 16px 60px" };
 
   return (
     <div style={wrap}>
+      {/* Header Bar */}
       <div style={{ maxWidth: 480, margin: "0 auto 18px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         {screen !== "home" ? (
-          <button onClick={exitGame} style={{
-            display: "inline-flex", alignItems: "center", gap: 6, border: "1.5px solid #C7E2C4", background: "#fff",
-            padding: "8px 14px", borderRadius: 12, color: INK, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "'Lexend', sans-serif",
-          }}>
+          <button onClick={exitGame} style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1.5px solid #C7E2C4", background: "#fff", padding: "8px 14px", borderRadius: 12, color: INK, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
             <LogOut size={16} /> Exit
           </button>
         ) : <div />}
 
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={() => setShowBrowser(true)} style={{
-            display: "inline-flex", alignItems: "center", gap: 6, border: "1.5px solid #C7E2C4", background: "#fff",
-            padding: "8px 14px", borderRadius: 12, color: PURPLE, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "'Lexend', sans-serif",
-          }}>
-            <Grid size={16} /> Browse Cards
+          <button onClick={() => setShowBrowser(true)} style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1.5px solid #C7E2C4", background: "#fff", padding: "8px 14px", borderRadius: 12, color: PURPLE, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+            <Grid size={16} /> Browse
           </button>
-          <button onClick={() => setShowRules(true)} style={{
-            display: "inline-flex", alignItems: "center", gap: 6, border: "1.5px solid #C7E2C4", background: "#fff",
-            padding: "8px 14px", borderRadius: 12, color: GREEN_DK, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "'Lexend', sans-serif",
-          }}>
+          <button onClick={() => setShowRules(true)} style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1.5px solid #C7E2C4", background: "#fff", padding: "8px 14px", borderRadius: 12, color: GREEN_DK, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
             <HelpCircle size={16} /> Rules
           </button>
         </div>
@@ -657,237 +588,125 @@ export default function App() {
 
       {showRules && <RulesModal onClose={() => setShowRules(false)} />}
       {showBrowser && <CardsBrowserModal onClose={() => setShowBrowser(false)} />}
-      {showAdmin && (
-        <AdminModal 
-          onClose={() => setShowAdmin(false)} 
-          onSpectate={(code) => {
-            setShowAdmin(false);
-            joinGame(code, true);
-          }}
-        />
-      )}
+      {showAdmin && <AdminModal onClose={() => setShowAdmin(false)} onSpectate={(code) => { setShowAdmin(false); joinGame(code, true); }} />}
 
       {/* Screen 1: Home */}
       {screen === "home" && (
         <div style={{ maxWidth: 440, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 24 }}>
-            <img 
-              src={logoImg} 
-              alt="Top Funds Logo" 
-              onClick={handleLogoClick}
-              style={{ maxHeight: 150, maxWidth: "100%", objectFit: "contain", cursor: "pointer" }} 
-            />
+            <img src={logoImg} alt="Top Funds Logo" onClick={handleLogoClick} style={{ maxHeight: 150, maxWidth: "100%", objectFit: "contain", cursor: "pointer" }} />
           </div>
+
           <div style={{ background: "#fff", borderRadius: 20, padding: 24, boxShadow: "0 6px 18px rgba(30,50,20,0.08)", marginBottom: 16 }}>
-            <label style={{ fontSize: 14, fontWeight: 700, color: INK }}>Your name</label>
-            <input value={nameInput} onChange={e => setNameInput(e.target.value)} placeholder="e.g. Leo"
-              style={{ width: "100%", boxSizing: "border-box", marginTop: 8, marginBottom: 18, padding: "12px 14px", borderRadius: 12, border: "1.5px solid #DCEEDA", fontSize: 16, fontFamily: "'Lexend', sans-serif" }} />
+            <label style={{ fontSize: 14, fontWeight: 700, color: INK }}>Your Name</label>
+            <input 
+              value={nameInput} 
+              onChange={e => setNameInput(e.target.value)} 
+              placeholder="e.g. Alex"
+              style={{ width: "100%", boxSizing: "border-box", marginTop: 8, marginBottom: 18, padding: "12px 14px", borderRadius: 12, border: "1.5px solid #DCEEDA", fontSize: 16, fontFamily: "'Lexend', sans-serif" }}
+            />
 
-            <button onClick={hostGame} disabled={busy} style={{
-              width: "100%", padding: "14px", borderRadius: 14, border: "none", background: GREEN, color: "#fff",
-              fontWeight: 800, fontSize: 16, cursor: "pointer", marginBottom: 16, fontFamily: "'Lexend', sans-serif",
-            }}>Host a new game</button>
+            <button onClick={hostGame} disabled={busy} style={{ width: "100%", padding: 14, borderRadius: 14, background: GREEN_DK, color: "#fff", border: "none", fontWeight: 800, fontSize: 16, cursor: "pointer", marginBottom: 16 }}>
+              Host New Game
+            </button>
 
-            <div style={{ textAlign: "center", color: "#9AA89A", fontSize: 13, margin: "8px 0 14px" }}>— or join one —</div>
-            <input value={joinCodeInput} onChange={e => setJoinCodeInput(e.target.value.toUpperCase())} placeholder="Room code" maxLength={4}
-              style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", borderRadius: 12, border: "1.5px solid #DCEEDA", fontSize: 18, letterSpacing: 6, textAlign: "center", marginBottom: 12, textTransform: "uppercase", fontFamily: "'Lexend', sans-serif", fontWeight: 700 }} />
-            <button onClick={handleJoinClick} disabled={busy} style={{
-              width: "100%", padding: "14px", borderRadius: 14, border: `2px solid ${PURPLE}`, background: "#fff", color: PURPLE,
-              fontWeight: 800, fontSize: 16, cursor: "pointer", fontFamily: "'Lexend', sans-serif",
-            }}>Join a game</button>
-            {error && <div style={{ color: "#C0392B", fontSize: 14, marginTop: 14, textAlign: "center" }}>{error}</div>}
+            <div style={{ display: "flex", gap: 10 }}>
+              <input 
+                value={joinCodeInput} 
+                onChange={e => setJoinCodeInput(e.target.value.toUpperCase())} 
+                placeholder="ROOM CODE" 
+                maxLength={4}
+                style={{ flex: 1, padding: "12px 14px", borderRadius: 12, border: "1.5px solid #DCEEDA", fontSize: 16, textAlign: "center", fontWeight: 800, letterSpacing: 2, fontFamily: "'Lexend', sans-serif" }}
+              />
+              <button onClick={handleJoinClick} disabled={busy} style={{ padding: "12px 20px", borderRadius: 12, background: PURPLE, color: "#fff", border: "none", fontWeight: 800, fontSize: 16, cursor: "pointer" }}>
+                Join
+              </button>
+            </div>
+            {error && <div style={{ color: RED, fontSize: 14, fontWeight: 700, marginTop: 12, textAlign: "center" }}>{error}</div>}
           </div>
         </div>
       )}
 
       {/* Screen 2: Lobby */}
-      {screen === "lobby" && (
+      {screen === "lobby" && room && (
         <div style={{ maxWidth: 440, margin: "0 auto" }}>
-          {!room ? (
-            <div style={{ textAlign: "center", padding: 20, fontSize: 16 }}>Loading room…</div>
-          ) : (
-            <>
-              <div style={{ textAlign: "center", marginBottom: 24 }}>
-                <img src={logoImg} alt="Top Funds Logo" style={{ maxHeight: 100, maxWidth: "100%", objectFit: "contain", marginBottom: 14 }} />
-                <div style={{ fontSize: 14, color: "#6B7C6B", marginBottom: 4 }}>Room code</div>
-                <div onClick={copyCode} style={{
-                  fontSize: 48, fontWeight: 900, letterSpacing: 8, color: PURPLE, cursor: "pointer",
-                  display: "inline-flex", alignItems: "center", gap: 10,
-                }}>
-                  {roomCode} {copied ? <Check size={28} color={GREEN_DK} /> : <Copy size={24} />}
+          <div style={{ background: "#fff", borderRadius: 20, padding: 24, boxShadow: "0 6px 18px rgba(30,50,20,0.08)", textAlign: "center" }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#6B7C6B", textTransform: "uppercase" }}>Room Code</div>
+            <div style={{ fontSize: 42, fontWeight: 900, color: PURPLE, letterSpacing: 4, margin: "6px 0 14px" }}>{room.code}</div>
+            
+            <button onClick={copyCode} style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1.5px solid #DCEEDA", background: MINT, padding: "8px 16px", borderRadius: 10, color: INK, fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 20 }}>
+              {copied ? <Check size={16} color={GREEN_DK} /> : <Copy size={16} />} 
+              {copied ? "Copied!" : "Copy Code"}
+            </button>
+
+            <div style={{ textAlign: "left", marginBottom: 20 }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: INK, marginBottom: 10 }}>Players Joined ({room.players?.length || 0})</div>
+              {room.players?.map(p => (
+                <div key={p.id} style={{ display: "flex", justifyContent: "space-between", padding: "10px 14px", background: MINT, borderRadius: 10, marginBottom: 6, fontWeight: 700, color: INK }}>
+                  <span>{p.name} {p.id === room.hostId && "👑 Host"}</span>
                 </div>
-                <div style={{ fontSize: 13, color: "#9AA89A", marginTop: 4 }}>tap to copy · share with your group</div>
-              </div>
-              <div style={{ background: "#fff", borderRadius: 20, padding: 24, boxShadow: "0 6px 18px rgba(30,50,20,0.08)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 800, color: INK, fontSize: 17, marginBottom: 14 }}>
-                  <Users size={20} color={PURPLE} /> Players ({room.players.length})
-                </div>
-                {room.players.map(p => (
-                  <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 4px", fontSize: 16, color: INK }}>
-                    {p.id === room.hostId && <Crown size={18} color={GREEN_DK} />}
-                    {p.name} {p.id === myId && <span style={{ color: "#9AA89A", fontSize: 13 }}>(you)</span>}
-                  </div>
-                ))}
-                {room.hostId === myId ? (
-                  <button onClick={startGame} disabled={room.players.length < 2} style={{
-                    width: "100%", marginTop: 18, padding: "14px", borderRadius: 14, border: "none",
-                    background: room.players.length < 2 ? "#CBE3C7" : GREEN, color: "#fff", fontWeight: 800, fontSize: 16,
-                    cursor: room.players.length < 2 ? "default" : "pointer", fontFamily: "'Lexend', sans-serif",
-                  }}>{room.players.length < 2 ? "Waiting for more players…" : `Start game (${room.players.length} players, ${CARDS.length} cards)`}</button>
-                ) : (
-                  <div style={{ marginTop: 18, textAlign: "center", color: "#6B7C6B", fontSize: 14.5 }}>Waiting for the host to start the game…</div>
-                )}
-                {error && <div style={{ color: "#C0392B", fontSize: 14, marginTop: 14, textAlign: "center" }}>{error}</div>}
-              </div>
-            </>
-          )}
+              ))}
+            </div>
+
+            {room.hostId === myId ? (
+              <button onClick={startGame} style={{ width: "100%", padding: 14, borderRadius: 14, background: GREEN_DK, color: "#fff", border: "none", fontWeight: 800, fontSize: 16, cursor: "pointer" }}>
+                Start Game
+              </button>
+            ) : (
+              <div style={{ color: "#6B7C6B", fontWeight: 600, fontSize: 15 }}>Waiting for host to start...</div>
+            )}
+            {error && <div style={{ color: RED, fontSize: 14, fontWeight: 700, marginTop: 12 }}>{error}</div>}
+          </div>
         </div>
       )}
 
       {/* Screen 3: Game */}
-      {screen === "game" && (
-        <div style={{ maxWidth: 480, margin: "0 auto" }}>
-          {!room ? (
-            <div style={{ textAlign: "center", padding: 20, fontSize: 16 }}>Loading…</div>
-          ) : room.status === "ended" ? (
-            <div style={{ textAlign: "center" }}>
-              <Trophy size={54} color={GREEN_DK} style={{ margin: "12px auto" }} />
-              <div style={{ fontSize: 28, fontWeight: 900, color: INK }}>
-                {([...room.players].map(p => ({ ...p, count: (room.hands[p.id] || []).length })).sort((a, b) => b.count - a.count)[0])?.name} wins!
-              </div>
-              <div style={{ color: "#6B7C6B", marginBottom: 24, fontSize: 15 }}>with all funds</div>
-              <div style={{ background: "#fff", borderRadius: 18, padding: 20, textAlign: "left" }}>
-                {[...room.players].map(p => ({ ...p, count: (room.hands[p.id] || []).length })).sort((a, b) => b.count - a.count).map((p, i) => (
-                  <div key={p.id} style={{ display: "flex", justifyContent: "space-between", padding: "10px 4px", borderBottom: "1px solid #EFF5EC", fontSize: 15.5 }}>
-                    <span style={{ fontWeight: 700, color: INK }}>{i + 1}. {p.name}</span>
-                    <span style={{ color: PURPLE, fontWeight: 700 }}>{p.count} cards</span>
-                  </div>
-                ))}
-              </div>
-              {room.hostId === myId && (
-                <button onClick={playAgain} style={{
-                  marginTop: 22, padding: "14px 24px", borderRadius: 14, border: "none", background: GREEN, color: "#fff",
-                  fontWeight: 800, fontSize: 16, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10, fontFamily: "'Lexend', sans-serif",
-                }}><RefreshCw size={18} /> Reshuffle & play again</button>
-              )}
+      {screen === "game" && room && (
+        <div style={{ maxWidth: 440, margin: "0 auto" }}>
+          {/* Winner / Status Banner */}
+          {room.status === "ended" ? (
+            <div style={{ background: PURPLE, color: "#fff", padding: 16, borderRadius: 16, textAlign: "center", marginBottom: 16, fontWeight: 800, fontSize: 18 }}>
+              🏆 {winnerPlayer ? `${winnerPlayer.name} Wins the Game!` : "Game Over!"}
+            </div>
+          ) : isSpectator ? (
+            <div style={{ background: INK, color: "#fff", padding: 12, borderRadius: 14, textAlign: "center", marginBottom: 16, fontWeight: 700 }}>
+              👀 Spectator Mode
             </div>
           ) : (
-            <>
-              <div style={{ textAlign: "center", marginBottom: 14 }}>
-                <img src={logoImg} alt="Top Funds Logo" style={{ maxHeight: 72, maxWidth: "100%", objectFit: "contain" }} />
-                <div style={{ fontSize: 13, color: "#9AA89A", marginTop: 4 }}>Room {roomCode} {(room.pile || []).length > 0 && `· pot: ${(room.pile || []).length}`}</div>
-              </div>
-
-              {/* Scoreboard */}
-              <div style={{ display: "flex", gap: 10, overflowX: "auto", marginBottom: 16, paddingBottom: 4 }}>
-                {[...room.players].map(p => ({ ...p, count: (room.hands[p.id] || []).length })).sort((a, b) => b.count - a.count).map(p => (
-                  <div key={p.id} style={{
-                    flex: "0 0 auto", background: p.id === room.pickerId ? PURPLE : "#fff", color: p.id === room.pickerId ? "#fff" : INK,
-                    borderRadius: 14, padding: "10px 14px", fontSize: 14.5, fontWeight: 700, boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-                  }}>{p.name}{p.id === myId ? " (you)" : ""} · {p.count}</div>
-                ))}
-              </div>
-
-              {/* Turn Banner & Card Display */}
-              {(() => {
-                const myCards = room.hands[myId] || [];
-                const isOut = myCards.length === 0;
-                const isSpectator = room.players.find(p => p.id === myId)?.isSpectator;
-                const isMyTurn = room.pickerId === myId && !isOut && !isSpectator;
-                const pickerName = room.players.find(p => p.id === room.pickerId)?.name || "another player";
-                const lastWinner = room.round?.winners?.[0];
-                const IWonLastRound = lastWinner === myId && !room.round?.isTie;
-
-                return (
-                  <>
-                    <div style={{ textAlign: "center", marginBottom: 16 }}>
-                      {isSpectator ? (
-                         <div style={{ background: MINT, border: `1.5px solid ${GREEN}`, padding: "12px 16px", borderRadius: 14 }}>
-                          <div style={{ fontWeight: 800, color: GREEN_DK, fontSize: 16 }}>
-                            Spectating Mode 👀
-                          </div>
-                          <div style={{ color: INK, fontSize: 14, marginTop: 2 }}>
-                            You are viewing this game. <span style={{color: PURPLE}}>Waiting for {pickerName} to pick a stat.</span>
-                          </div>
-                        </div>
-                      ) : isOut ? (
-                        <div style={{ background: "#FFF3E0", border: "1.5px solid #FFE0B2", padding: "12px 16px", borderRadius: 14 }}>
-                          <div style={{ fontWeight: 800, color: AMBER, fontSize: 16 }}>
-                            You're out of cards! 🍿
-                          </div>
-                          <div style={{ color: "#8D6E63", fontSize: 14, marginTop: 2 }}>
-                            Great effort! Sit back and spectate the rest of the battle.
-                          </div>
-                        </div>
-                      ) : isMyTurn ? (
-                        <div style={{ 
-                          background: PURPLE, 
-                          color: "#fff", 
-                          padding: "14px 18px", 
-                          borderRadius: 16, 
-                          boxShadow: "0 6px 18px rgba(140,82,255,0.3)"
-                        }}>
-                          <div style={{ fontWeight: 900, fontSize: 18, letterSpacing: 0.3 }}>
-                            {IWonLastRound ? "🎉 YOU WON THAT ROUND!" : "👉 YOUR TURN!"}
-                          </div>
-                          <div style={{ fontSize: 14, opacity: 0.95, marginTop: 2, fontWeight: 600 }}>
-                            {IWonLastRound ? "Your turn to pick a stat below" : "Choose your best stat from the card below"}
-                          </div>
-                        </div>
-                      ) : (
-                        <div style={{ color: INK, fontWeight: 700, fontSize: 16, padding: "8px 0" }}>
-                          Waiting for <span style={{ color: PURPLE }}>{pickerName}</span> to pick a stat…
-                        </div>
-                      )}
-                    </div>
-
-                    {!isSpectator && myCards[0] ? (
-                      <FundCard 
-                        card={CARD_MAP[myCards[0]]} 
-                        interactive={isMyTurn} 
-                        onPick={chooseCategory}
-                        isMyTurn={isMyTurn} 
-                      />
-                    ) : (
-                      <CardBack />
-                    )}
-                  </>
-                );
-              })()}
-
-              {room.round && (
-                <div style={{ marginTop: 20, background: "#fff", borderRadius: 18, padding: 16 }}>
-                  <div style={{ fontWeight: 800, fontSize: 14.5, color: INK, marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-                    <Sparkles size={16} color={PURPLE} /> Last round: {CATEGORIES.find(c => c.key === room.round.category)?.label}
-                  </div>
-                  {room.players.filter(p => room.round.revealed[p.id]).map(p => {
-                    const c = CARD_MAP[room.round.revealed[p.id]];
-                    const won = room.round.winners.includes(p.id);
-                    const cat = CATEGORIES.find(catItem => catItem.key === room.round.category);
-                    return (
-                      <div key={p.id} style={{
-                        display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px",
-                        borderRadius: 10, background: won ? MINT : "transparent", marginBottom: 4,
-                      }}>
-                        <span style={{ fontSize: 14, color: INK }}>{p.name}: {c.name}</span>
-                        <span style={{ fontWeight: 800, fontSize: 14.5, color: won ? GREEN_DK : "#9AA89A" }}>{cat.fmt(room.round.values[p.id])}{won && !room.round.isTie ? " 🏆" : ""}</span>
-                      </div>
-                    );
-                  })}
-                  {room.round.isTie && <div style={{ fontSize: 13.5, color: AMBER, marginTop: 6 }}>Tie! Cards held in the pot for next round.</div>}
-                </div>
-              )}
-
-              <div style={{ marginTop: 20 }}>
-                <div style={{ fontWeight: 800, fontSize: 13, color: "#9AA89A", marginBottom: 8, letterSpacing: 0.5 }}>ACTIVITY</div>
-                <div style={{ background: "#fff", borderRadius: 14, padding: "10px 14px", maxHeight: 150, overflowY: "auto" }}>
-                  {[...(room.log || [])].reverse().map((l, i) => (
-                    <div key={i} style={{ fontSize: 13.5, color: "#5A6B5A", padding: "4px 0" }}>{l.text}</div>
-                  ))}
-                </div>
-              </div>
-            </>
+            <div style={{ background: isMyTurn ? GREEN_DK : "#fff", color: isMyTurn ? "#fff" : INK, padding: 12, borderRadius: 14, textAlign: "center", marginBottom: 16, fontWeight: 800, border: isMyTurn ? "none" : "2px solid #DCEEDA" }}>
+              {isMyTurn ? "✨ Your Turn — Choose a Stat!" : `Waiting for ${room.players.find(p => p.id === room.pickerId)?.name || "player"}...`}
+            </div>
           )}
+
+          {/* Player Hand info */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, padding: "0 4px" }}>
+            <span style={{ fontWeight: 800, color: INK }}>Cards left: {myHand.length}</span>
+            {room.pile?.length > 0 && <span style={{ color: AMBER, fontWeight: 800 }}>Pot: {room.pile.length} cards</span>}
+          </div>
+
+          {/* Primary Card View */}
+          {activeCard ? (
+            <FundCard 
+              card={activeCard} 
+              interactive={isMyTurn && room.status === "playing"} 
+              onPick={chooseCategory} 
+              highlightKey={room.round?.category}
+            />
+          ) : (
+            <div style={{ background: "#fff", borderRadius: 22, padding: 40, textAlign: "center", color: "#6B7C6B", fontWeight: 700 }}>
+              {myHand.length === 0 ? "You're out of cards!" : "Loading active card..."}
+            </div>
+          )}
+
+          {/* Action Logs */}
+          <div style={{ marginTop: 20, background: "#fff", borderRadius: 16, padding: 16, border: "1px solid #E3F0E1" }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#6B7C6B", textTransform: "uppercase", marginBottom: 8 }}>Game Log</div>
+            <div style={{ maxHeight: 100, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
+              {[...(room.log || [])].reverse().slice(0, 5).map((l, i) => (
+                <div key={i} style={{ fontSize: 13, color: INK }}>• {l.text}</div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>
