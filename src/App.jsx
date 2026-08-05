@@ -15,9 +15,20 @@ import vanguardLogo from "./vanguard.svg";
 import lgLogo from "./lg.svg";
 import isharesLogo from "./ishares.svg";
 import wisdomtreeLogo from "./wisdomtree.svg";
+import mgLogo from "./mg.svg";
+import artemisLogo from "./artemis.svg";
+import arkLogo from "./ark.svg";
+import xtrackersLogo from "./ark.svg";
+import aegonLogo from "./ark.svg";
+import hsbcLogo from "./ark.svg";
+import baillieLogo from "./ark.svg";
+import invescoLogo from "./ark.svg";
+import schrodersLogo from "./ark.svg";
+import jpmorganLogo from "./ark.svg";
 
 // ---------- Fund card data ----------
 const CARDS = [
+  // --- Global Equity & Bond Funds (New 8) ---
   { 
     id: "fid-world", 
     name: "Fidelity Index World Fund P Acc", 
@@ -90,6 +101,152 @@ const CARDS = [
     risk: 7,
     stats: { growth2025: 45.20, holdings: 1, esg: 1, cost: 0.35, countries: 1, growth2022: -64.20 } 
   },
+
+  // --- Regional & Sector Funds (Original 16 Set) ---
+  { 
+    id: "mg-japan", 
+    name: "M&G Japan Fund", 
+    manager: "M&G", 
+    logo: mgLogo,
+    desc: "Invests in innovative Japanese companies, from robotics to electronics", 
+    risk: 5,
+    stats: { growth2025: 12.40, holdings: 65, esg: 3.5, cost: 0.68, countries: 1, growth2022: -3.50 } 
+  },
+  { 
+    id: "art-euro", 
+    name: "Artemis European Growth Fund", 
+    manager: "Artemis", 
+    logo: artemisLogo,
+    desc: "Targets fast-growing top companies across continental Europe", 
+    risk: 5,
+    stats: { growth2025: 15.80, holdings: 52, esg: 4.0, cost: 0.85, countries: 12, growth2022: -9.20 } 
+  },
+  { 
+    id: "ark-ai", 
+    name: "ARK Artificial Intelligence & Tech ETF", 
+    manager: "ARK", 
+    logo: arkLogo,
+    desc: "High-conviction bets on future tech innovators, AI, and automation", 
+    risk: 7,
+    stats: { growth2025: 32.10, holdings: 35, esg: 2.5, cost: 0.75, countries: 4, growth2022: -45.60 } 
+  },
+  { 
+    id: "xtr-gold", 
+    name: "Xtrackers Physical Gold ETC", 
+    manager: "Xtrackers", 
+    logo: xtrackersLogo,
+    desc: "Backed directly by physical gold bullion stored safely in vault vaults", 
+    risk: 4,
+    stats: { growth2025: 11.20, holdings: 1, esg: 3.0, cost: 0.15, countries: 1, growth2022: 6.80 } 
+  },
+  { 
+    id: "aeg-hy-bond", 
+    name: "Aegon High Yield Bond Fund", 
+    manager: "Aegon", 
+    logo: aegonLogo,
+    desc: "Lends to higher-risk companies in exchange for larger monthly income payouts", 
+    risk: 4,
+    stats: { growth2025: 7.90, holdings: 180, esg: 3.0, cost: 0.58, countries: 15, growth2022: -10.40 } 
+  },
+  { 
+    id: "hsbc-ftse200", 
+    name: "HSBC FTSE 250 Index Fund", 
+    manager: "HSBC", 
+    logo: hsbcLogo,
+    desc: "Focuses on medium-sized UK businesses driving local economic growth", 
+    risk: 5,
+    stats: { growth2025: 9.40, holdings: 250, esg: 3.5, cost: 0.18, countries: 1, growth2022: -19.70 } 
+  },
+  { 
+    id: "bg-smcap", 
+    name: "Baillie Gifford Smaller Companies", 
+    manager: "Baillie Gifford", 
+    logo: baillieLogo,
+    desc: "Backs ambitious small UK companies looking to become the titans of tomorrow", 
+    risk: 6,
+    stats: { growth2025: 16.50, holdings: 75, esg: 4.0, cost: 0.73, countries: 1, growth2022: -28.10 } 
+  },
+  { 
+    id: "inv-clean", 
+    name: "Invesco Global Clean Energy ETF", 
+    manager: "Invesco", 
+    logo: invescoLogo,
+    desc: "Invests in solar, wind, and renewable energy companies driving decarbonisation", 
+    risk: 6,
+    stats: { growth2025: 22.40, holdings: 120, esg: 5.0, cost: 0.60, countries: 18, growth2022: -18.30 } 
+  },
+  { 
+    id: "sch-us-eq", 
+    name: "Schroder US Equity Fund", 
+    manager: "Schroders", 
+    logo: schrodersLogo,
+    desc: "Targets leading American blue-chip businesses across tech, retail, and healthcare", 
+    risk: 5,
+    stats: { growth2025: 20.30, holdings: 60, esg: 3.5, cost: 0.52, countries: 1, growth2022: -14.20 } 
+  },
+  { 
+    id: "jpm-emerging", 
+    name: "JPMorgan Emerging Markets Fund", 
+    manager: "JPMorgan", 
+    logo: jpmorganLogo,
+    desc: "Invests in fast-growing developing economies like India, Brazil, and Vietnam", 
+    risk: 6,
+    stats: { growth2025: 13.80, holdings: 85, esg: 3.0, cost: 0.78, countries: 22, growth2022: -16.90 } 
+  },
+  { 
+    id: "van-s&p500", 
+    name: "Vanguard S&P 500 UCITS ETF", 
+    manager: "Vanguard", 
+    logo: vanguardLogo,
+    desc: "Tracks the 500 largest publicly traded companies in the United States", 
+    risk: 5,
+    stats: { growth2025: 21.10, holdings: 503, esg: 3.5, cost: 0.07, countries: 1, growth2022: -13.10 } 
+  },
+  { 
+    id: "ish-nasdaq", 
+    name: "iShares NASDAQ 100 UCITS ETF", 
+    manager: "iShares", 
+    logo: isharesLogo,
+    desc: "Concentrated exposure to 100 major tech and innovation giants in the US", 
+    risk: 6,
+    stats: { growth2025: 26.80, holdings: 101, esg: 3.5, cost: 0.33, countries: 1, growth2022: -32.40 } 
+  },
+  { 
+    id: "lg-health", 
+    name: "L&G Healthcare Breakthrough ETF", 
+    manager: "L&G", 
+    logo: lgLogo,
+    desc: "Invests in medical technology, pharmaceuticals, and modern biotech firms", 
+    risk: 6,
+    stats: { growth2025: 14.90, holdings: 95, esg: 4.5, cost: 0.49, countries: 14, growth2022: -12.10 } 
+  },
+  { 
+    id: "fid-asia", 
+    name: "Fidelity Asia Pacific Focus Fund", 
+    manager: "Fidelity", 
+    logo: fidelityLogo,
+    desc: "Focuses on market-leading companies across Asian developed markets", 
+    risk: 6,
+    stats: { growth2025: 11.60, holdings: 50, esg: 3.5, cost: 0.90, countries: 9, growth2022: -11.40 } 
+  },
+  { 
+    id: "hsbc-uk-all", 
+    name: "HSBC UK All Share Index Fund", 
+    manager: "HSBC", 
+    logo: hsbcLogo,
+    desc: "Spreads investments across companies of all sizes operating in the UK", 
+    risk: 5,
+    stats: { growth2025: 10.10, holdings: 580, esg: 3.5, cost: 0.06, countries: 1, growth2022: 0.80 } 
+  },
+  { 
+    id: "ish-div", 
+    name: "iShares UK Dividend UCITS ETF", 
+    manager: "iShares", 
+    logo: isharesLogo,
+    desc: "Targets 50 high-dividend paying UK businesses to generate regular cash return", 
+    risk: 4,
+    stats: { growth2025: 8.70, holdings: 50, esg: 3.0, cost: 0.40, countries: 1, growth2022: 4.10 } 
+  }
 ];
 const CARD_MAP = Object.fromEntries(CARDS.map(c => [c.id, c]));
 
