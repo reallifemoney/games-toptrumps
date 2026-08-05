@@ -663,6 +663,9 @@ useEffect(() => {
   const activeCard = myHand[0] ? CARD_MAP[myHand[0]] : null;
   const isMyTurn = room?.pickerId === myId;
   const isSpectator = room?.players?.find(p => p.id === myId)?.isSpectator;
+  const activePlayers = room?.players
+    ? room.players.filter(p => !p.isSpectator && (room.hands?.[p.id] || []).length > 0)
+    : [];
 
   // Sorted Leaderboard calculations
   const leaderboard = room?.players ? [...room.players].map(p => ({
@@ -873,7 +876,34 @@ useEffect(() => {
               </div>
 
               {/* Primary Card View */}
-              {activeCard ? (
+              {isSpectator ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  {activePlayers.map(player => {
+                    const playerHand = room.hands?.[player.id] || [];
+                    const playerCard = playerHand[0] ? CARD_MAP[playerHand[0]] : null;
+                    const isPicking = room.pickerId === player.id;
+
+                    return (
+                      <div key={player.id} style={{ background: "#fff", borderRadius: 18, padding: 14, border: "1.5px solid #DCEEDA" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                          <div style={{ fontWeight: 800, color: INK }}>{player.name}</div>
+                          <div style={{ fontSize: 13, color: "#6B7C6B", fontWeight: 700 }}>
+                            {playerHand.length} {playerHand.length === 1 ? "card" : "cards"}
+                            {isPicking ? " • picking" : ""}
+                          </div>
+                        </div>
+                        {playerCard ? (
+                          <FundCard card={playerCard} interactive={false} />
+                        ) : (
+                          <div style={{ padding: 18, textAlign: "center", color: "#6B7C6B", fontWeight: 700, background: MINT, borderRadius: 14 }}>
+                            Out of cards
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : activeCard ? (
                 <FundCard 
                   card={activeCard} 
                   interactive={isMyTurn && room.status === "playing"} 
