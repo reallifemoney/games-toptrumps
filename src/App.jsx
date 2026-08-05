@@ -493,7 +493,7 @@ export default function App() {
 
     const roundKey = `${room.round.ts || "0"}-${room.round.category || ""}-${room.round.pickerId || ""}-${(room.round.winners || []).join(",")}`;
 
-    if (lastRoundKeyRef.current && lastRoundKeyRef.current !== roundKey) {
+    if (!lastRoundKeyRef.current || lastRoundKeyRef.current !== roundKey) {
       setShowRoundResult(true);
     }
 
@@ -820,9 +820,6 @@ useEffect(() => {
                 ? "That means this round was a tie — cards stay in the pot."
                 : <>Therefore <span style={{ color: GREEN_DK }}>{roundWinner?.name || "Someone"}</span> won this round.</>}
             </div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: PURPLE, textAlign: "center" }}>
-              It is now {nextPicker?.name || "the next player"}'s turn to pick.
-            </div>
             <div style={{ marginTop: 14, textAlign: "center", color: "#6B7C6B", fontSize: 13, fontWeight: 700 }}>
               Tap anywhere to continue
             </div>
@@ -1005,14 +1002,19 @@ useEffect(() => {
                     const isPicking = room.pickerId === player.id;
 
                     return (
-                      <div key={player.id} style={{ background: "#fff", borderRadius: 18, padding: 14, border: "1.5px solid #DCEEDA" }}>
+                      <div key={player.id} style={{ background: "#fff", borderRadius: 18, padding: 14, border: isPicking ? `2px solid ${GREEN_DK}` : "1.5px solid #DCEEDA", boxShadow: isPicking ? "0 8px 20px rgba(113, 197, 88, 0.18)" : "none" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                           <div style={{ fontWeight: 800, color: INK }}>{player.name}</div>
-                          <div style={{ fontSize: 13, color: "#6B7C6B", fontWeight: 700 }}>
+                          <div style={{ fontSize: 13, color: isPicking ? GREEN_DK : "#6B7C6B", fontWeight: 700 }}>
                             {playerHand.length} {playerHand.length === 1 ? "card" : "cards"}
                             {isPicking ? " • picking" : ""}
                           </div>
                         </div>
+                        {isPicking && (
+                          <div style={{ marginBottom: 10, textAlign: "center", color: GREEN_DK, fontSize: 13, fontWeight: 800, background: MINT, borderRadius: 999, padding: "6px 10px" }}>
+                            Current turn
+                          </div>
+                        )}
                         {playerCard ? (
                           <FundCard card={playerCard} interactive={false} />
                         ) : (
@@ -1025,12 +1027,19 @@ useEffect(() => {
                   })}
                 </div>
               ) : activeCard ? (
-                <FundCard 
-                  card={activeCard} 
-                  interactive={isMyTurn && room.status === "playing"} 
-                  onPick={chooseCategory} 
-                  highlightKey={room.round?.category}
-                />
+                <div style={{ border: isMyTurn ? `2px solid ${GREEN_DK}` : "2px solid transparent", borderRadius: 24, padding: isMyTurn ? 6 : 0, background: isMyTurn ? "#f6fff1" : "transparent", boxShadow: isMyTurn ? "0 8px 24px rgba(63, 126, 39, 0.16)" : "none" }}>
+                  {isMyTurn && (
+                    <div style={{ marginBottom: 8, textAlign: "center", color: GREEN_DK, fontSize: 13, fontWeight: 800, background: MINT, borderRadius: 999, padding: "6px 10px" }}>
+                      Your turn
+                    </div>
+                  )}
+                  <FundCard 
+                    card={activeCard} 
+                    interactive={isMyTurn && room.status === "playing"} 
+                    onPick={chooseCategory} 
+                    highlightKey={room.round?.category}
+                  />
+                </div>
               ) : (
                 <div style={{ background: "#fff", borderRadius: 22, padding: 40, textAlign: "center", color: "#6B7C6B", fontWeight: 700 }}>
                   {myHand.length === 0 ? "You're out of cards!" : "Loading active card..."}
