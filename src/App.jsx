@@ -469,7 +469,7 @@ function handleLogoClick() {
 
 // Modify joinGame check inside your App component:
 const handleJoinClick = () => {
-  if (joinCodeInput.toLowerCase() === "rlmadmin") {
+  if (joinCodeInput.toLowerCase() === "rlma") {
     setShowAdmin(true);
     setJoinCodeInput("");
     return;
