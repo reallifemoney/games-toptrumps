@@ -1,9 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ref, set, get, onValue, off } from "firebase/database";
 import { db } from "./firebase";
-import { TrendingUp, TrendingDown, Layers, Leaf, Coins, Globe2, Crown, Users, Copy, Check, RefreshCw, Trophy, Sparkles } from "lucide-react";
+import { 
+  TrendingUp, TrendingDown, Layers, Leaf, Coins, Globe2, Crown, 
+  Users, Copy, Check, RefreshCw, Trophy, Sparkles, HelpCircle, 
+  Grid, LogOut, X, Search 
+} from "lucide-react";
 
-// ---------- Fund card data (from Leo's physical "Top Funds" deck) ----------
+// Set your logo path here (assuming image is saved in src/public folder)
+import logoImg from "./logo.png"; // Replace or update path if needed
+
+// ---------- Fund card data ----------
 const CARDS = [
   { id: "mng-japan", name: "M&G Japan Fund Acc", manager: "M&G", color: "#0d8f6e", desc: "Invests in companies that are based in or do most of their business in Japan", risk: 6,
     stats: { growth2025: 22.17, holdings: 60, esg: 4, cost: 0.47, countries: 1, growth2022: 6.25 } },
@@ -105,8 +112,8 @@ function RiskScale({ risk }) {
 function FundCard({ card, interactive, onPick, highlightKey, dim }) {
   return (
     <div style={{
-      background: "#fff", borderRadius: 20, padding: "18px 18px 10px", width: "100%", maxWidth: 340,
-      boxShadow: "0 6px 18px rgba(30,50,20,0.10)", opacity: dim ? 0.55 : 1, border: "2px solid #E3F0E1",
+      background: "#fff", borderRadius: 20, padding: "18px 18px 10px", width: "100%", maxWidth: 340, boxSizing: "border-box",
+      boxShadow: "0 6px 18px rgba(30,50,20,0.10)", opacity: dim ? 0.55 : 1, border: "2px solid #E3F0E1", margin: "0 auto",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
         <div style={{
@@ -152,15 +159,112 @@ function FundCard({ card, interactive, onPick, highlightKey, dim }) {
 function CardBack() {
   return (
     <div style={{
-      background: MINT, borderRadius: 20, border: "2px dashed #C7E2C4", width: "100%", maxWidth: 340,
+      background: MINT, borderRadius: 20, border: "2px dashed #C7E2C4", width: "100%", maxWidth: 340, margin: "0 auto",
       minHeight: 200, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
     }}>
-      <div style={{ fontWeight: 900, fontSize: 22, color: GREEN }}>TOP <span style={{ color: PURPLE }}>FUNDS</span></div>
-      <div style={{ fontSize: 12, color: "#7C8C7C" }}>Real Life Money</div>
+      <img src={logoImg} alt="Top Funds Logo" style={{ maxHeight: 60, maxWidth: "80%", objectFit: "contain" }} />
     </div>
   );
 }
 
+// ---------- Modal Components ----------
+function Modal({ title, onClose, children }) {
+  return (
+    <div style={{
+      position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+      background: "rgba(15, 25, 15, 0.6)", display: "flex", alignItems: "center", justifyContent: "center",
+      zIndex: 1000, padding: 16,
+    }}>
+      <div style={{
+        background: "#fff", borderRadius: 20, width: "100%", maxWidth: 480, maxHeight: "85vh",
+        display: "flex", flexDirection: "column", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", overflow: "hidden",
+      }}>
+        <div style={{
+          padding: "16px 20px", borderBottom: "1px solid #EFF5EC", display: "flex",
+          justify: "space-between", alignItems: "center", background: MINT,
+        }}>
+          <div style={{ fontWeight: 800, fontSize: 18, color: INK }}>{title}</div>
+          <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", padding: 4 }}>
+            <X size={20} color={INK} />
+          </button>
+        </div>
+        <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RulesModal({ onClose }) {
+  return (
+    <Modal title="How to Play" onClose={onClose}>
+      <div style={{ color: INK, fontSize: 14, lineHeight: 1.6 }}>
+        <p style={{ marginTop: 0 }}><b>Goal:</b> Win all the fund cards in the deck!</p>
+        
+        <div style={{ background: MINT, padding: 12, borderRadius: 12, marginBottom: 12 }}>
+          <b>1. Pick a Stat:</b> On your turn, look at your top card and choose the stat you think is best (e.g., highest Growth or lowest Cost).
+        </div>
+
+        <div style={{ background: MINT, padding: 12, borderRadius: 12, marginBottom: 12 }}>
+          <b>2. Compare Cards:</b> All players reveal their top card for that category:
+          <ul style={{ margin: "6px 0 0", paddingLeft: 20 }}>
+            <li><b>Higher Wins:</b> Growth, Holdings, ESG Rating, Countries</li>
+            <li><b>Lower Wins:</b> Cost</li>
+          </ul>
+        </div>
+
+        <div style={{ background: MINT, padding: 12, borderRadius: 12, marginBottom: 12 }}>
+          <b>3. Win or Tie:</b>
+          <ul style={{ margin: "6px 0 0", paddingLeft: 20 }}>
+            <li>The winner takes all played cards and goes next.</li>
+            <li>In a <b>Tie</b>, cards go into the pot. The next round's winner gets the pot too!</li>
+          </ul>
+        </div>
+
+        <p style={{ marginBottom: 0, textAlign: "center", color: PURPLE, fontWeight: 700 }}>
+          The last player remaining with cards wins the game!
+        </p>
+      </div>
+    </Modal>
+  );
+}
+
+function CardsBrowserModal({ onClose }) {
+  const [filter, setFilter] = useState("");
+  const filtered = CARDS.filter(c => 
+    c.name.toLowerCase().includes(filter.toLowerCase()) || 
+    c.manager.toLowerCase().includes(filter.toLowerCase()) ||
+    c.desc.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  return (
+    <Modal title={`All Funds (${CARDS.length})`} onClose={onClose}>
+      <div style={{ position: "relative", marginBottom: 16 }}>
+        <Search size={18} color="#9AA89A" style={{ position: "absolute", left: 12, top: 12 }} />
+        <input 
+          value={filter} 
+          onChange={e => setFilter(e.target.value)} 
+          placeholder="Search funds or managers..."
+          style={{
+            width: "100%", boxSizing: "border-box", padding: "10px 12px 10px 38px",
+            borderRadius: 10, border: "1.5px solid #DCEEDA", fontSize: 14,
+          }}
+        />
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {filtered.map(card => (
+          <FundCard key={card.id} card={card} interactive={false} />
+        ))}
+        {filtered.length === 0 && (
+          <div style={{ textAlign: "center", color: "#9AA89A", padding: 20 }}>No funds matching "{filter}"</div>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+// ---------- Main App Component ----------
 export default function App() {
   const [screen, setScreen] = useState("home"); // home | lobby | game
   const [myId] = useState(makeId);
@@ -171,6 +275,8 @@ export default function App() {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [showRules, setShowRules] = useState(false);
+  const [showBrowser, setShowBrowser] = useState(false);
   const listenerRef = useRef(null);
 
   // ---- Firebase helpers ----
@@ -225,6 +331,26 @@ export default function App() {
     setRoomCode(code);
     setScreen("lobby");
     setBusy(false);
+  }
+
+  async function exitGame() {
+    if (roomCode && room) {
+      // Remove self from room players list if quitting active session
+      const updatedPlayers = room.players.filter(p => p.id !== myId);
+      if (updatedPlayers.length > 0) {
+        const isHost = room.hostId === myId;
+        const updatedRoom = {
+          ...room,
+          players: updatedPlayers,
+          hostId: isHost ? updatedPlayers[0].id : room.hostId,
+          log: [...(room.log || []), { text: `${room.players.find(p => p.id === myId)?.name || 'A player'} left the game`, ts: Date.now() }],
+        };
+        await saveRoom(updatedRoom);
+      }
+    }
+    setRoomCode("");
+    setRoom(null);
+    setScreen("home");
   }
 
   async function startGame() {
@@ -307,15 +433,46 @@ export default function App() {
   }, [room, screen]);
 
   // ================= RENDER =================
-  const wrap = { minHeight: "100vh", background: MINT, fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif", padding: "24px 14px 60px" };
+  const wrap = { minHeight: "100vh", background: MINT, fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif", padding: "16px 14px 60px" };
 
-  if (screen === "home") {
-    return (
-      <div style={wrap}>
+  return (
+    <div style={wrap}>
+      {/* Persistent Nav Actions across screens */}
+      <div style={{ maxWidth: 460, margin: "0 auto 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        {screen !== "home" ? (
+          <button onClick={exitGame} style={{
+            display: "inline-flex", alignItems: "center", gap: 6, border: "1.5px solid #C7E2C4", background: "#fff",
+            padding: "6px 12px", borderRadius: 10, color: INK, fontSize: 13, fontWeight: 700, cursor: "pointer",
+          }}>
+            <LogOut size={15} /> Exit
+          </button>
+        ) : <div />}
+
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => setShowBrowser(true)} style={{
+            display: "inline-flex", alignItems: "center", gap: 6, border: "1.5px solid #C7E2C4", background: "#fff",
+            padding: "6px 12px", borderRadius: 10, color: PURPLE, fontSize: 13, fontWeight: 700, cursor: "pointer",
+          }}>
+            <Grid size={15} /> Browse Cards
+          </button>
+          <button onClick={() => setShowRules(true)} style={{
+            display: "inline-flex", alignItems: "center", gap: 6, border: "1.5px solid #C7E2C4", background: "#fff",
+            padding: "6px 12px", borderRadius: 10, color: GREEN_DK, fontSize: 13, fontWeight: 700, cursor: "pointer",
+          }}>
+            <HelpCircle size={15} /> Rules
+          </button>
+        </div>
+      </div>
+
+      {/* Popups */}
+      {showRules && <RulesModal onClose={() => setShowRules(false)} />}
+      {showBrowser && <CardsBrowserModal onClose={() => setShowBrowser(false)} />}
+
+      {/* Screen 1: Home */}
+      {screen === "home" && (
         <div style={{ maxWidth: 420, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 28 }}>
-            <div style={{ fontWeight: 900, fontSize: 40, color: GREEN, lineHeight: 1 }}>TOP <span style={{ color: PURPLE }}>FUNDS</span></div>
-            <div style={{ color: "#6B7C6B", marginTop: 6, fontSize: 14 }}>Real Life Money — live multiplayer</div>
+          <div style={{ textAlign: "center", marginBottom: 20 }}>
+            <img src={logoImg} alt="Top Funds Logo" style={{ maxHeight: 110, maxWidth: "100%", objectFit: "contain" }} />
           </div>
           <div style={{ background: "#fff", borderRadius: 18, padding: 20, boxShadow: "0 6px 18px rgba(30,50,20,0.08)", marginBottom: 16 }}>
             <label style={{ fontSize: 13, fontWeight: 700, color: INK }}>Your name</label>
@@ -340,152 +497,141 @@ export default function App() {
             <b>How it works:</b> one person hosts and shares the 4-letter code. Everyone joins on their own phone or laptop. On your turn, pick a stat from your top card — whoever's fund wins that stat takes all the cards. Most cards when the deck runs out wins!
           </div>
         </div>
-      </div>
-    );
-  }
+      )}
 
-  if (screen === "lobby") {
-    if (!room) return <div style={wrap}>Loading room…</div>;
-    const isHost = room.hostId === myId;
-    return (
-      <div style={wrap}>
+      {/* Screen 2: Lobby */}
+      {screen === "lobby" && (
         <div style={{ maxWidth: 420, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 20 }}>
-            <div style={{ fontSize: 13, color: "#6B7C6B", marginBottom: 4 }}>Room code</div>
-            <div onClick={copyCode} style={{
-              fontSize: 44, fontWeight: 900, letterSpacing: 8, color: PURPLE, cursor: "pointer",
-              display: "inline-flex", alignItems: "center", gap: 10,
-            }}>
-              {roomCode} {copied ? <Check size={26} color={GREEN_DK} /> : <Copy size={22} />}
-            </div>
-            <div style={{ fontSize: 12, color: "#9AA89A" }}>tap to copy · share with your group</div>
-          </div>
-          <div style={{ background: "#fff", borderRadius: 18, padding: 20, boxShadow: "0 6px 18px rgba(30,50,20,0.08)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, color: INK, marginBottom: 12 }}>
-              <Users size={18} color={PURPLE} /> Players ({room.players.length})
-            </div>
-            {room.players.map(p => (
-              <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 4px", fontSize: 15, color: INK }}>
-                {p.id === room.hostId && <Crown size={16} color={GREEN_DK} />}
-                {p.name} {p.id === myId && <span style={{ color: "#9AA89A", fontSize: 12 }}>(you)</span>}
-              </div>
-            ))}
-            {isHost ? (
-              <button onClick={startGame} disabled={room.players.length < 2} style={{
-                width: "100%", marginTop: 16, padding: "12px", borderRadius: 12, border: "none",
-                background: room.players.length < 2 ? "#CBE3C7" : GREEN, color: "#fff", fontWeight: 800, fontSize: 15,
-                cursor: room.players.length < 2 ? "default" : "pointer",
-              }}>{room.players.length < 2 ? "Waiting for more players…" : `Start game (${room.players.length} players, ${CARDS.length} cards)`}</button>
-            ) : (
-              <div style={{ marginTop: 16, textAlign: "center", color: "#6B7C6B", fontSize: 13.5 }}>Waiting for the host to start the game…</div>
-            )}
-            {error && <div style={{ color: "#C0392B", fontSize: 13, marginTop: 12, textAlign: "center" }}>{error}</div>}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (screen === "game") {
-    if (!room) return <div style={wrap}>Loading…</div>;
-    const myHand = room.hands[myId] || [];
-    const myCard = myHand[0] ? CARD_MAP[myHand[0]] : null;
-    const isMyTurn = room.status === "playing" && room.pickerId === myId;
-    const picker = room.players.find(p => p.id === room.pickerId);
-    const standings = [...room.players].map(p => ({ ...p, count: (room.hands[p.id] || []).length })).sort((a, b) => b.count - a.count);
-
-    if (room.status === "ended") {
-      const champ = standings[0];
-      return (
-        <div style={wrap}>
-          <div style={{ maxWidth: 420, margin: "0 auto", textAlign: "center" }}>
-            <Trophy size={48} color={GREEN_DK} style={{ margin: "10px auto" }} />
-            <div style={{ fontSize: 26, fontWeight: 900, color: INK }}>{champ.name} wins!</div>
-            <div style={{ color: "#6B7C6B", marginBottom: 20 }}>with {champ.count} of {CARDS.length} funds</div>
-            <div style={{ background: "#fff", borderRadius: 16, padding: 18, textAlign: "left" }}>
-              {standings.map((p, i) => (
-                <div key={p.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 4px", borderBottom: "1px solid #EFF5EC" }}>
-                  <span style={{ fontWeight: 700, color: INK }}>{i + 1}. {p.name}</span>
-                  <span style={{ color: PURPLE, fontWeight: 700 }}>{p.count} cards</span>
-                </div>
-              ))}
-            </div>
-            {room.hostId === myId && (
-              <button onClick={playAgain} style={{
-                marginTop: 20, padding: "12px 20px", borderRadius: 12, border: "none", background: GREEN, color: "#fff",
-                fontWeight: 800, fontSize: 15, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8,
-              }}><RefreshCw size={16} /> Reshuffle & play again</button>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    const round = room.round;
-    const cat = round ? CATEGORIES.find(c => c.key === round.category) : null;
-
-    return (
-      <div style={wrap}>
-        <div style={{ maxWidth: 460, margin: "0 auto" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <div style={{ fontWeight: 900, color: GREEN, fontSize: 18 }}>TOP <span style={{ color: PURPLE }}>FUNDS</span></div>
-            <div style={{ fontSize: 12, color: "#9AA89A" }}>Room {roomCode} {(room.pile || []).length > 0 && `· pot: ${(room.pile || []).length}`}</div>
-          </div>
-
-          {/* scoreboard */}
-          <div style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 14, paddingBottom: 2 }}>
-            {standings.map(p => (
-              <div key={p.id} style={{
-                flex: "0 0 auto", background: p.id === room.pickerId ? PURPLE : "#fff", color: p.id === room.pickerId ? "#fff" : INK,
-                borderRadius: 12, padding: "8px 12px", fontSize: 13, fontWeight: 700, boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-              }}>{p.name}{p.id === myId ? " (you)" : ""} · {p.count}</div>
-            ))}
-          </div>
-
-          <div style={{ textAlign: "center", marginBottom: 14, fontWeight: 700, color: isMyTurn ? GREEN_DK : INK, fontSize: 14.5 }}>
-            {myHand.length === 0 ? "You're out of cards — spectating" : isMyTurn ? "Your turn — tap a stat below to play it" : `Waiting for ${picker ? picker.name : "…"} to choose a stat`}
-          </div>
-
-          {myCard ? (
-            <FundCard card={myCard} interactive={isMyTurn} onPick={chooseCategory} />
+          {!room ? (
+            <div style={{ textAlign: "center", padding: 20 }}>Loading room…</div>
           ) : (
-            <CardBack />
-          )}
-
-          {round && (
-            <div style={{ marginTop: 18, background: "#fff", borderRadius: 16, padding: 14 }}>
-              <div style={{ fontWeight: 800, fontSize: 13.5, color: INK, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                <Sparkles size={15} color={PURPLE} /> Last round: {cat.label}
+            <>
+              <div style={{ textAlign: "center", marginBottom: 20 }}>
+                <img src={logoImg} alt="Top Funds Logo" style={{ maxHeight: 75, maxWidth: "100%", objectFit: "contain", marginBottom: 12 }} />
+                <div style={{ fontSize: 13, color: "#6B7C6B", marginBottom: 4 }}>Room code</div>
+                <div onClick={copyCode} style={{
+                  fontSize: 44, fontWeight: 900, letterSpacing: 8, color: PURPLE, cursor: "pointer",
+                  display: "inline-flex", alignItems: "center", gap: 10,
+                }}>
+                  {roomCode} {copied ? <Check size={26} color={GREEN_DK} /> : <Copy size={22} />}
+                </div>
+                <div style={{ fontSize: 12, color: "#9AA89A" }}>tap to copy · share with your group</div>
               </div>
-              {room.players.filter(p => round.revealed[p.id]).map(p => {
-                const c = CARD_MAP[round.revealed[p.id]];
-                const won = round.winners.includes(p.id);
-                return (
-                  <div key={p.id} style={{
-                    display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 8px",
-                    borderRadius: 8, background: won ? "#EAF6EA" : "transparent", marginBottom: 4,
-                  }}>
-                    <span style={{ fontSize: 13, color: INK }}>{p.name}: {c.name}</span>
-                    <span style={{ fontWeight: 800, color: won ? GREEN_DK : "#9AA89A" }}>{cat.fmt(round.values[p.id])}{won && !round.isTie ? " 🏆" : ""}</span>
+              <div style={{ background: "#fff", borderRadius: 18, padding: 20, boxShadow: "0 6px 18px rgba(30,50,20,0.08)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, color: INK, marginBottom: 12 }}>
+                  <Users size={18} color={PURPLE} /> Players ({room.players.length})
+                </div>
+                {room.players.map(p => (
+                  <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 4px", fontSize: 15, color: INK }}>
+                    {p.id === room.hostId && <Crown size={16} color={GREEN_DK} />}
+                    {p.name} {p.id === myId && <span style={{ color: "#9AA89A", fontSize: 12 }}>(you)</span>}
                   </div>
-                );
-              })}
-              {round.isTie && <div style={{ fontSize: 12.5, color: AMBER, marginTop: 4 }}>Tie! Cards held in the pot for next round.</div>}
-            </div>
+                ))}
+                {room.hostId === myId ? (
+                  <button onClick={startGame} disabled={room.players.length < 2} style={{
+                    width: "100%", marginTop: 16, padding: "12px", borderRadius: 12, border: "none",
+                    background: room.players.length < 2 ? "#CBE3C7" : GREEN, color: "#fff", fontWeight: 800, fontSize: 15,
+                    cursor: room.players.length < 2 ? "default" : "pointer",
+                  }}>{room.players.length < 2 ? "Waiting for more players…" : `Start game (${room.players.length} players, ${CARDS.length} cards)`}</button>
+                ) : (
+                  <div style={{ marginTop: 16, textAlign: "center", color: "#6B7C6B", fontSize: 13.5 }}>Waiting for the host to start the game…</div>
+                )}
+                {error && <div style={{ color: "#C0392B", fontSize: 13, marginTop: 12, textAlign: "center" }}>{error}</div>}
+              </div>
+            </>
           )}
-
-          <div style={{ marginTop: 18 }}>
-            <div style={{ fontWeight: 800, fontSize: 12.5, color: "#9AA89A", marginBottom: 6 }}>ACTIVITY</div>
-            <div style={{ background: "#fff", borderRadius: 12, padding: "8px 12px", maxHeight: 140, overflowY: "auto" }}>
-              {[...room.log].reverse().map((l, i) => (
-                <div key={i} style={{ fontSize: 12.5, color: "#5A6B5A", padding: "3px 0" }}>{l.text}</div>
-              ))}
-            </div>
-          </div>
         </div>
-      </div>
-    );
-  }
+      )}
 
-  return null;
+      {/* Screen 3: Game */}
+      {screen === "game" && (
+        <div style={{ maxWidth: 460, margin: "0 auto" }}>
+          {!room ? (
+            <div style={{ textAlign: "center", padding: 20 }}>Loading…</div>
+          ) : room.status === "ended" ? (
+            <div style={{ textAlign: "center" }}>
+              <Trophy size={48} color={GREEN_DK} style={{ margin: "10px auto" }} />
+              <div style={{ fontSize: 26, fontWeight: 900, color: INK }}>
+                {([...room.players].map(p => ({ ...p, count: (room.hands[p.id] || []).length })).sort((a, b) => b.count - a.count)[0])?.name} wins!
+              </div>
+              <div style={{ color: "#6B7C6B", marginBottom: 20 }}>with all funds</div>
+              <div style={{ background: "#fff", borderRadius: 16, padding: 18, textAlign: "left" }}>
+                {[...room.players].map(p => ({ ...p, count: (room.hands[p.id] || []).length })).sort((a, b) => b.count - a.count).map((p, i) => (
+                  <div key={p.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 4px", borderBottom: "1px solid #EFF5EC" }}>
+                    <span style={{ fontWeight: 700, color: INK }}>{i + 1}. {p.name}</span>
+                    <span style={{ color: PURPLE, fontWeight: 700 }}>{p.count} cards</span>
+                  </div>
+                ))}
+              </div>
+              {room.hostId === myId && (
+                <button onClick={playAgain} style={{
+                  marginTop: 20, padding: "12px 20px", borderRadius: 12, border: "none", background: GREEN, color: "#fff",
+                  fontWeight: 800, fontSize: 15, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8,
+                }}><RefreshCw size={16} /> Reshuffle & play again</button>
+              )}
+            </div>
+          ) : (
+            <>
+              <div style={{ textAlign: "center", marginBottom: 12 }}>
+                <img src={logoImg} alt="Top Funds Logo" style={{ maxHeight: 50, maxWidth: "100%", objectFit: "contain" }} />
+                <div style={{ fontSize: 12, color: "#9AA89A", marginTop: 4 }}>Room {roomCode} {(room.pile || []).length > 0 && `· pot: ${(room.pile || []).length}`}</div>
+              </div>
+
+              {/* scoreboard */}
+              <div style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 14, paddingBottom: 2 }}>
+                {[...room.players].map(p => ({ ...p, count: (room.hands[p.id] || []).length })).sort((a, b) => b.count - a.count).map(p => (
+                  <div key={p.id} style={{
+                    flex: "0 0 auto", background: p.id === room.pickerId ? PURPLE : "#fff", color: p.id === room.pickerId ? "#fff" : INK,
+                    borderRadius: 12, padding: "8px 12px", fontSize: 13, fontWeight: 700, boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                  }}>{p.name}{p.id === myId ? " (you)" : ""} · {p.count}</div>
+                ))}
+              </div>
+
+              <div style={{ textAlign: "center", marginBottom: 14, fontWeight: 700, color: room.pickerId === myId ? GREEN_DK : INK, fontSize: 14.5 }}>
+                {(room.hands[myId] || []).length === 0 ? "You're out of cards — spectating" : room.pickerId === myId ? "Your turn — tap a stat below to play it" : `Waiting for ${room.players.find(p => p.id === room.pickerId)?.name || "…"} to choose a stat`}
+              </div>
+
+              {(room.hands[myId] || [])[0] ? (
+                <FundCard card={CARD_MAP[(room.hands[myId] || [])[0]]} interactive={room.pickerId === myId} onPick={chooseCategory} />
+              ) : (
+                <CardBack />
+              )}
+
+              {room.round && (
+                <div style={{ marginTop: 18, background: "#fff", borderRadius: 16, padding: 14 }}>
+                  <div style={{ fontWeight: 800, fontSize: 13.5, color: INK, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                    <Sparkles size={15} color={PURPLE} /> Last round: {CATEGORIES.find(c => c.key === room.round.category)?.label}
+                  </div>
+                  {room.players.filter(p => room.round.revealed[p.id]).map(p => {
+                    const c = CARD_MAP[room.round.revealed[p.id]];
+                    const won = room.round.winners.includes(p.id);
+                    const cat = CATEGORIES.find(catItem => catItem.key === room.round.category);
+                    return (
+                      <div key={p.id} style={{
+                        display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 8px",
+                        borderRadius: 8, background: won ? "#EAF6EA" : "transparent", marginBottom: 4,
+                      }}>
+                        <span style={{ fontSize: 13, color: INK }}>{p.name}: {c.name}</span>
+                        <span style={{ fontWeight: 800, color: won ? GREEN_DK : "#9AA89A" }}>{cat.fmt(room.round.values[p.id])}{won && !room.round.isTie ? " 🏆" : ""}</span>
+                      </div>
+                    );
+                  })}
+                  {room.round.isTie && <div style={{ fontSize: 12.5, color: AMBER, marginTop: 4 }}>Tie! Cards held in the pot for next round.</div>}
+                </div>
+              )}
+
+              <div style={{ marginTop: 18 }}>
+                <div style={{ fontWeight: 800, fontSize: 12.5, color: "#9AA89A", marginBottom: 6 }}>ACTIVITY</div>
+                <div style={{ background: "#fff", borderRadius: 12, padding: "8px 12px", maxHeight: 140, overflowY: "auto" }}>
+                  {[...(room.log || [])].reverse().map((l, i) => (
+                    <div key={i} style={{ fontSize: 12.5, color: "#5A6B5A", padding: "3px 0" }}>{l.text}</div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
