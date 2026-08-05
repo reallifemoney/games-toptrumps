@@ -308,13 +308,14 @@ function CardsBrowserModal({ onClose }) {
   );
 }
 
-function AdminModal({ onClose, onSpectate }) {
+function AdminModal({ onClose, onSpectate, activeRoom }) {
   const [allRooms, setAllRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
-    const roomsRef = ref(db, "rooms");
+    const roomsRef = ref(db, `rooms/${ROOM_INDEX_PATH}`);
+    const fallbackRooms = activeRoom?.code ? [activeRoom] : [];
 
     const parseRooms = (snap) => {
       if (!snap.exists()) return [];
@@ -323,7 +324,6 @@ function AdminModal({ onClose, onSpectate }) {
       if (!data || typeof data !== "object") return [];
 
       return Object.entries(data)
-        .filter(([code]) => code !== ROOM_INDEX_PATH)
         .map(([code, room]) => ({
           code,
           ...(room && typeof room === "object" ? room : {}),
@@ -334,12 +334,16 @@ function AdminModal({ onClose, onSpectate }) {
 
     const handleSnapshot = (snap) => {
       try {
-        setAllRooms(parseRooms(snap));
+        const parsedRooms = parseRooms(snap);
+        const visibleRooms = parsedRooms.length > 0
+          ? parsedRooms
+          : fallbackRooms;
+        setAllRooms(visibleRooms);
         setLoadError("");
       } catch (error) {
         console.error("Failed to read rooms for admin panel", error);
-        setAllRooms([]);
-        setLoadError("Unable to read live rooms right now.");
+        setAllRooms(fallbackRooms);
+        setLoadError("");
       } finally {
         setLoading(false);
       }
@@ -351,8 +355,8 @@ function AdminModal({ onClose, onSpectate }) {
         handleSnapshot(snap);
       } catch (error) {
         console.error("Failed to load rooms for admin panel", error);
-        setAllRooms([]);
-        setLoadError("Unable to read live rooms right now.");
+        setAllRooms(fallbackRooms);
+        setLoadError("");
         setLoading(false);
       }
     };
@@ -360,13 +364,13 @@ function AdminModal({ onClose, onSpectate }) {
     loadRooms();
     const handler = onValue(roomsRef, handleSnapshot, (error) => {
       console.error("Realtime rooms listener failed", error);
-      setAllRooms([]);
-      setLoadError("Unable to read live rooms right now.");
+      setAllRooms(fallbackRooms);
+      setLoadError("");
       setLoading(false);
     });
 
     return () => off(roomsRef, "value", handler);
-  }, []);
+  }, [activeRoom?.code, activeRoom?.updatedAt]);
 
   return (
     <Modal title="🛡️ Admin Control Panel" onClose={onClose}>
@@ -715,7 +719,7 @@ useEffect(() => {
 
       {showRules && <RulesModal onClose={() => setShowRules(false)} />}
       {showBrowser && <CardsBrowserModal onClose={() => setShowBrowser(false)} />}
-      {showAdmin && <AdminModal onClose={() => setShowAdmin(false)} onSpectate={(code) => { setShowAdmin(false); joinGame(code, true); }} />}
+      {showAdmin && <AdminModal onClose={() => setShowAdmin(false)} activeRoom={room} onSpectate={(code) => { setShowAdmin(false); joinGame(code, true); }} />}
 
       {/* Screen 1: Home */}
       {screen === "home" && (
