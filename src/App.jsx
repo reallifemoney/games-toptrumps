@@ -419,8 +419,10 @@ export default function App() {
   const [showBrowser, setShowBrowser] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [logoTaps, setLogoTaps] = useState(0);
+  const [showRoundResult, setShowRoundResult] = useState(false);
 
   const listenerRef = useRef(null);
+  const lastRoundTsRef = useRef(null);
 
   useEffect(() => {
     const fontId = "lexend-font-link";
@@ -646,7 +648,7 @@ useEffect(() => {
 
     const updated = {
       ...r, hands: newHands, pile: newPile, pickerId: nextPicker, status,
-      round: { category: catKey, revealed, values, winners, isTie, ts: Date.now() },
+      round: { category: catKey, revealed, values, winners, isTie, pickerId: r.pickerId, ts: Date.now() },
       log: [...(r.log || []), { text: logText, ts: Date.now() }].slice(-40),
     };
     await saveRoom(updated);
@@ -723,6 +725,17 @@ useEffect(() => {
     : null;
 
   const isHost = room?.hostId === myId;
+  const roundCategory = room?.round ? CATEGORIES.find(c => c.key === room.round.category) : null;
+  const roundPlayers = room?.players && room?.round
+    ? room.players.filter(player => Object.prototype.hasOwnProperty.call(room.round.revealed || {}, player.id))
+    : [];
+  const roundWinner = room?.round?.winners?.[0]
+    ? room.players?.find(player => player.id === room.round.winners[0])
+    : null;
+  const nextPicker = room?.players?.find(player => player.id === room?.pickerId);
+  const roundResultTitle = room?.round?.isTie
+    ? `Tie on ${roundCategory?.label || "this category"}`
+    : `${roundWinner?.name || "Someone"} won this round`;
   const wrap = { minHeight: "100vh", background: MINT, fontFamily: "'Lexend', sans-serif", padding: "18px 16px 60px" };
 
   return (
@@ -748,6 +761,57 @@ useEffect(() => {
       {showRules && <RulesModal onClose={() => setShowRules(false)} />}
       {showBrowser && <CardsBrowserModal onClose={() => setShowBrowser(false)} />}
       {showAdmin && <AdminModal onClose={() => setShowAdmin(false)} activeRoom={room} onSpectate={(code) => { setShowAdmin(false); joinGame(code, true); }} />}
+      {showRoundResult && room?.round && room.status === "playing" && (
+        <div
+          onClick={() => setShowRoundResult(false)}
+          style={{
+            position: "fixed", inset: 0, background: "rgba(15, 25, 15, 0.72)", zIndex: 2000,
+            display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+          }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, background: "#fff", borderRadius: 24, padding: 20, boxShadow: "0 14px 36px rgba(0,0,0,0.24)", maxHeight: "85vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#6B7C6B", textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 8 }}>Round result</div>
+            <div style={{ fontSize: 24, fontWeight: 900, color: INK, marginBottom: 10 }}>{roundResultTitle}</div>
+            <div style={{ background: MINT, borderRadius: 14, padding: 12, marginBottom: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#6B7C6B", textTransform: "uppercase", marginBottom: 4 }}>Category</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: PURPLE }}>{roundCategory?.label || room.round.category}</div>
+            </div>
+            <div style={{ background: "#F8FAF8", borderRadius: 14, padding: 12, marginBottom: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#6B7C6B", textTransform: "uppercase", marginBottom: 8 }}>Pick made by</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: INK }}>
+                {room.players?.find(player => player.id === room.round.pickerId)?.name || "Player"} chose {roundCategory?.label || room.round.category}
+              </div>
+              <div style={{ fontSize: 15, color: GREEN_DK, fontWeight: 800, marginTop: 6 }}>
+                Value: {roundCategory ? roundCategory.fmt(room.round.values?.[room.round.pickerId]) : room.round.values?.[room.round.pickerId]}
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+              {roundPlayers.map(player => {
+                const value = room.round.values?.[player.id];
+                const isWinner = room.round.winners?.includes(player.id);
+                const formatted = roundCategory ? roundCategory.fmt(value) : value;
+                return (
+                  <div key={player.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", borderRadius: 12, background: isWinner ? "#EAF7E7" : "#F8FAF8", border: isWinner ? `1.5px solid ${GREEN}` : "1px solid #E3F0E1" }}>
+                    <div style={{ fontWeight: 800, color: INK }}>{player.name}</div>
+                    <div style={{ fontWeight: 800, color: isWinner ? GREEN_DK : INK }}>{formatted}</div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: INK, lineHeight: 1.5, marginBottom: 12 }}>
+              {room.round.isTie
+                ? "That means this round was a tie — cards stay in the pot."
+                : <>Therefore <span style={{ color: GREEN_DK }}>{roundWinner?.name || "Someone"}</span> won this round.</>}
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: PURPLE, textAlign: "center" }}>
+              It is now {nextPicker?.name || "the next player"}'s turn to pick.
+            </div>
+            <div style={{ marginTop: 14, textAlign: "center", color: "#6B7C6B", fontSize: 13, fontWeight: 700 }}>
+              Tap anywhere to continue
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Screen 1: Home */}
       {screen === "home" && (
