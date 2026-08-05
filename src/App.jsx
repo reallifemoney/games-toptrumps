@@ -780,15 +780,6 @@ useEffect(() => {
               <div style={{ fontSize: 13, fontWeight: 800, color: "#6B7C6B", textTransform: "uppercase", marginBottom: 4 }}>Category</div>
               <div style={{ fontSize: 18, fontWeight: 800, color: PURPLE }}>{roundCategory?.label || room.round.category}</div>
             </div>
-            <div style={{ background: "#F8FAF8", borderRadius: 14, padding: 12, marginBottom: 12 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: "#6B7C6B", textTransform: "uppercase", marginBottom: 8 }}>Pick made by</div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: INK }}>
-                {room.players?.find(player => player.id === room.round.pickerId)?.name || "Player"} chose {roundCategory?.label || room.round.category}
-              </div>
-              <div style={{ fontSize: 15, color: GREEN_DK, fontWeight: 800, marginTop: 6 }}>
-                Value: {roundCategory ? roundCategory.fmt(room.round.values?.[room.round.pickerId]) : room.round.values?.[room.round.pickerId]}
-              </div>
-            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
               {roundPlayers.map(player => {
                 const value = room.round.values?.[player.id];
