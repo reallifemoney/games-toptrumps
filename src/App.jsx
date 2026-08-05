@@ -844,7 +844,7 @@ useEffect(() => {
                     <div style={{ fontSize: 14, marginTop: 4, fontWeight: 700, opacity: 0.95 }}>{roundSummary.body}</div>
                   </>
                 ) : isMyTurn ? (
-                  "✨ Your Turn — Choose a Stat!"
+                  "✨ Your turn — choose a stat!"
                 ) : (
                   `Waiting for ${room.players.find(p => p.id === room.pickerId)?.name || "player"}...`
                 )}
