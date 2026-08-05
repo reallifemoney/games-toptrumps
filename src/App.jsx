@@ -25,6 +25,18 @@ const CARDS = [
     stats: { growth2025: 4.76, holdings: 66, esg: 4, cost: 0.10, countries: 8, growth2022: 1.69 } },
   { id: "xtr-gold", name: "Xtrackers Physical Gold ETC", manager: "DWS", color: "#555555", desc: "Holds gold bars so you don't have to", risk: 7,
     stats: { growth2025: 76.71, holdings: 1, esg: 3, cost: 0.25, countries: 1, growth2022: 6.89 } },
+  { id: "van-ls100", name: "Vanguard LifeStrategy 100% Equity Fund Acc", manager: "Vanguard", color: "#800000", desc: "Ready-made portfolio only containing equities", risk: 5,
+    stats: { growth2025: 16.04, holdings: 8660, esg: 3.5, cost: 0.20, countries: 50, growth2022: -6.25 } },
+  { id: "van-ls20", name: "Vanguard LifeStrategy 20% Equity Fund Acc", manager: "Vanguard", color: "#800000", desc: "Ready-made portfolio with around 80% in bonds", risk: 4,
+    stats: { growth2025: 7.20, holdings: 22000, esg: 3.5, cost: 0.20, countries: 50, growth2022: -15.84 } },
+  { id: "ishares-ffs", name: "iShares Developed World Fossil Fuel Screened Acc", manager: "iShares", color: "#6cb33f", desc: "Fund of equities that comply with certain ESG rules", risk: 5,
+    stats: { growth2025: 13.10, holdings: 1191, esg: 4, cost: 0.12, countries: 23, growth2022: -11.60 } },
+  { id: "abrdn-gcb", name: "abrdn Global Corp Bond Screened Tracker Acc", manager: "abrdn", color: "#000000", desc: "Fund of corporate bonds provided company meets ESG rules", risk: 4,
+    stats: { growth2025: 6.77, holdings: 9035, esg: 4, cost: 0.10, countries: 27, growth2022: -15.14 } },
+  { id: "aviva-mm", name: "Aviva Multi-Manager 40-85% Shares Inc", manager: "Aviva", color: "#ffd200", desc: "Manager decides how much equity to hold based on markets, between 40 and 85%", risk: 5,
+    stats: { growth2025: 12.31, holdings: 3750, esg: 3, cost: 1.27, countries: 42, growth2022: -9.37 } },
+  { id: "aegon-eth", name: "Aegon Ethical Equity Fund Acc", manager: "aegon", color: "#0057ff", desc: "Fund of equities that meet certain ESG criteria", risk: 6,
+    stats: { growth2025: 2.43, holdings: 64, esg: 4.5, cost: 0.77, countries: 5, growth2022: -22.41 } },
 ];
 const CARD_MAP = Object.fromEntries(CARDS.map(c => [c.id, c]));
 
