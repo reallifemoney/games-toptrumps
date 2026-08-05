@@ -422,7 +422,6 @@ export default function App() {
   const [showRoundResult, setShowRoundResult] = useState(false);
 
   const listenerRef = useRef(null);
-  const lastRoundTsRef = useRef(null);
 
   useEffect(() => {
     const fontId = "lexend-font-link";
@@ -489,6 +488,7 @@ export default function App() {
 
   async function hostGame() {
     setError("");
+    setShowRoundResult(false);
     if (!nameInput.trim()) return setError("Enter your name first");
     setBusy(true);
     const code = makeCode();
@@ -557,6 +557,7 @@ useEffect(() => {
     };
     
     await saveRoom(updated);
+    setShowRoundResult(false);
     setRoomCode(code);
     setScreen(r.status === "playing" ? "game" : "lobby"); 
     setBusy(false);
@@ -577,6 +578,7 @@ useEffect(() => {
     }
     setRoomCode("");
     setRoom(null);
+    setShowRoundResult(false);
     setScreen("home");
   }
 
@@ -593,6 +595,7 @@ useEffect(() => {
       ...r, status: "playing", hands, pickerId: r.players[0].id, pile: [], round: null,
       log: [...r.log, { text: "Game started — cards dealt!", ts: Date.now() }],
     };
+    setShowRoundResult(false);
     await saveRoom(updated);
   }
 
@@ -652,6 +655,7 @@ useEffect(() => {
       log: [...(r.log || []), { text: logText, ts: Date.now() }].slice(-40),
     };
     await saveRoom(updated);
+    setShowRoundResult(true);
   }
 
   async function becomeSpectatorForCurrentGame() {
