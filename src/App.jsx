@@ -815,11 +815,7 @@ useEffect(() => {
                 );
               })}
             </div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: INK, lineHeight: 1.5, marginBottom: 12 }}>
-              {room.round.isTie
-                ? "That means this round was a tie — cards stay in the pot."
-                : "The round result is shown above."}
-            </div>
+            
             <div style={{ marginTop: 14, textAlign: "center", color: "#6B7C6B", fontSize: 13, fontWeight: 700 }}>
               Tap anywhere to continue
             </div>
