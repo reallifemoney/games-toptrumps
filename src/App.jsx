@@ -68,6 +68,7 @@ const CATEGORIES = [
 ];
 
 const MINT = "#eef8eb", GREEN = "#71c558", GREEN_DK = "#3F7E27", PURPLE = "#8c52ff", INK = "#1F2A1F", AMBER = "#C1791C", RED = "#E53935";
+const ROOM_INDEX_PATH = "__index__";
 
 function shuffle(arr) {
   const a = [...arr];
@@ -322,6 +323,7 @@ function AdminModal({ onClose, onSpectate }) {
       if (!data || typeof data !== "object") return [];
 
       return Object.entries(data)
+        .filter(([code]) => code !== ROOM_INDEX_PATH)
         .map(([code, room]) => ({
           code,
           ...(room && typeof room === "object" ? room : {}),
@@ -427,14 +429,30 @@ export default function App() {
     }
   }, []);
 
+  async function syncRoomIndex(room) {
+    if (!room?.code) return;
+    const indexEntry = {
+      code: room.code,
+      status: room.status || "lobby",
+      updatedAt: room.updatedAt || Date.now(),
+      playerCount: (room.players || []).length,
+      players: room.players || [],
+    };
+    await set(ref(db, `rooms/${ROOM_INDEX_PATH}/${room.code}`), indexEntry);
+  }
+
   async function loadRoom(code) {
     const snap = await get(ref(db, `rooms/${code}`));
-    return snap.exists() ? snap.val() : null;
+    if (!snap.exists()) return null;
+    const room = snap.val();
+    await syncRoomIndex(room);
+    return room;
   }
   
   async function saveRoom(newRoom) {
     newRoom.updatedAt = Date.now();
     await set(ref(db, `rooms/${newRoom.code}`), newRoom);
+    await syncRoomIndex(newRoom);
     setRoom(newRoom);
   }
 
