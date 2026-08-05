@@ -652,6 +652,31 @@ useEffect(() => {
     await saveRoom(updated);
   }
 
+  async function becomeSpectatorForCurrentGame() {
+    if (!roomCode || !room) return;
+    setBusy(true);
+    const r = await loadRoom(roomCode);
+    if (!r) {
+      setBusy(false);
+      return;
+    }
+
+    const updatedPlayers = (r.players || []).map(player => {
+      if (player.id !== myId) return player;
+      return { ...player, isSpectator: true };
+    });
+
+    const playerName = updatedPlayers.find(p => p.id === myId)?.name || "Player";
+    const updated = {
+      ...r,
+      players: updatedPlayers,
+      log: [...(r.log || []), { text: `${playerName} switched to spectator mode`, ts: Date.now() }].slice(-40),
+    };
+
+    await saveRoom(updated);
+    setBusy(false);
+  }
+
   function copyCode() {
     if (navigator.clipboard) navigator.clipboard.writeText(roomCode);
     setCopied(true);
@@ -861,6 +886,21 @@ useEffect(() => {
           ) : (
             /* ACTIVE GAMEPLAY VIEW */
             <>
+              {!isSpectator && room.status === "playing" && myHand.length === 0 && (
+                <div style={{ background: "#fff", borderRadius: 16, padding: 14, border: "2px solid #DCEEDA", marginBottom: 16 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: INK, marginBottom: 6 }}>You’re out of cards</div>
+                  <div style={{ fontSize: 13, color: "#6B7C6B", marginBottom: 10 }}>Choose how you’d like to follow the rest of the game.</div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <button onClick={becomeSpectatorForCurrentGame} disabled={busy} style={{ flex: 1, minWidth: 140, padding: "10px 12px", borderRadius: 12, border: `1.5px solid ${PURPLE}`, background: "#fff", color: PURPLE, fontWeight: 800, cursor: "pointer" }}>
+                      Watch this game
+                    </button>
+                    <button onClick={() => setShowBrowser(true)} style={{ flex: 1, minWidth: 140, padding: "10px 12px", borderRadius: 12, border: "1.5px solid #DCEEDA", background: MINT, color: INK, fontWeight: 800, cursor: "pointer" }}>
+                      Browse all cards
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Round result banner */}
               <div style={{ background: isMyTurn ? GREEN_DK : "#fff", color: isMyTurn ? "#fff" : INK, padding: 14, borderRadius: 14, textAlign: "center", marginBottom: 16, fontWeight: 800, border: isMyTurn ? "none" : "2px solid #DCEEDA" }}>
                 {roundSummary ? (
