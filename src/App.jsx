@@ -91,14 +91,40 @@ function StatValue({ v }) {
   return <span style={{ color: isNeg ? AMBER : GREEN_DK, fontWeight: 700 }}>{v}</span>;
 }
 
-function Stars({ n }) {
-  const full = Math.floor(n);
-  const half = n - full >= 0.5;
+function StarIcon({ fillPercentage }) {
+  const gradientId = React.useId();
+
   return (
-    <span style={{ color: GREEN_DK, letterSpacing: 1.5, fontSize: 16 }}>
-      {"★".repeat(full)}
-      {half ? "✦" : ""}
-      {"☆".repeat(Math.max(0, 5 - full - (half ? 1 : 0)))}
+    <svg 
+      width="18" 
+      height="18" 
+      viewBox="0 0 24 24" 
+      style={{ marginRight: 2, verticalAlign: "middle" }}
+    >
+      <defs>
+        <linearGradient id={gradientId}>
+          <stop offset={`${fillPercentage}%`} stopColor={GREEN_DK} />
+          <stop offset={`${fillPercentage}%`} stopColor="#E0EBE0" />
+        </linearGradient>
+      </defs>
+      <polygon
+        points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
+        fill={`url(#${gradientId})`}
+        stroke={GREEN_DK}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function Stars({ n }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center" }}>
+      {[1, 2, 3, 4, 5].map((i) => {
+        const fill = Math.max(0, Math.min(100, (n - i + 1) * 100));
+        return <StarIcon key={i} fillPercentage={fill} />;
+      })}
     </span>
   );
 }
