@@ -731,7 +731,7 @@ useEffect(() => {
         if (room.round.isTie) {
           return {
             title: "Tie on the last round",
-            body: `Cards stayed in the pot. You now have ${myHand.length} cards.`,
+            body: `Cards stayed in the pot. Cards remaining: ${myHand.length}`,
           };
         }
 
@@ -739,13 +739,13 @@ useEffect(() => {
         if (winner?.id === myId) {
           return {
             title: "You won the last round!",
-            body: `You now have ${myHand.length} cards.`,
+            body: `Cards remaining: ${myHand.length}`,
           };
         }
 
         return {
           title: `${winner?.name || "Someone"} won the last round`,
-          body: `You now have ${myHand.length} cards.`,
+          body: `Cards remaining: ${myHand.length}`,
         };
       })()
     : null;
@@ -818,7 +818,7 @@ useEffect(() => {
             <div style={{ fontSize: 16, fontWeight: 800, color: INK, lineHeight: 1.5, marginBottom: 12 }}>
               {room.round.isTie
                 ? "That means this round was a tie — cards stay in the pot."
-                : <>Therefore <span style={{ color: GREEN_DK }}>{roundWinner?.name || "Someone"}</span> won this round.</>}
+                : "The round result is shown above."}
             </div>
             <div style={{ marginTop: 14, textAlign: "center", color: "#6B7C6B", fontSize: 13, fontWeight: 700 }}>
               Tap anywhere to continue
