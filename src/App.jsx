@@ -215,7 +215,7 @@ function Modal({ title, onClose, children }) {
       }}>
         <div style={{
           padding: "18px 22px", borderBottom: "1px solid #EFF5EC", display: "flex",
-          justifySpace: "between", alignItems: "center", background: MINT,
+          justifyContent: "space-between", alignItems: "center", background: MINT,
         }}>
           <div style={{ fontWeight: 800, fontSize: 20, color: INK }}>{title}</div>
           <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", padding: 4 }}>
@@ -495,6 +495,10 @@ export default function App() {
     await saveRoom(updated);
   }
 
+  async function reshuffleAndPlayAgain() {
+    await startGame();
+  }
+
   async function chooseCategory(catKey) {
     const r = await loadRoom(roomCode);
     if (!r || r.status !== "playing") return;
@@ -560,9 +564,12 @@ export default function App() {
   const activeCard = myHand[0] ? CARD_MAP[myHand[0]] : null;
   const isMyTurn = room?.pickerId === myId;
   const isSpectator = room?.players?.find(p => p.id === myId)?.isSpectator;
-  const winnerPlayer = room?.status === "ended" 
-    ? room.players.find(p => (room.hands?.[p.id] || []).length > 0) 
-    : null;
+
+  // Sorted Leaderboard calculations
+  const leaderboard = room?.players ? [...room.players].map(p => ({
+    ...p,
+    cardCount: (room.hands?.[p.id] || []).length
+  })).sort((a, b) => b.cardCount - a.cardCount) : [];
 
   const wrap = { minHeight: "100vh", background: MINT, fontFamily: "'Lexend', sans-serif", padding: "18px 16px 60px" };
 
@@ -660,53 +667,114 @@ export default function App() {
         </div>
       )}
 
-      {/* Screen 3: Game */}
+      {/* Screen 3: Active Game & Game Over Screen */}
       {screen === "game" && room && (
         <div style={{ maxWidth: 440, margin: "0 auto" }}>
-          {/* Winner / Status Banner */}
           {room.status === "ended" ? (
-            <div style={{ background: PURPLE, color: "#fff", padding: 16, borderRadius: 16, textAlign: "center", marginBottom: 16, fontWeight: 800, fontSize: 18 }}>
-              🏆 {winnerPlayer ? `${winnerPlayer.name} Wins the Game!` : "Game Over!"}
-            </div>
-          ) : isSpectator ? (
-            <div style={{ background: INK, color: "#fff", padding: 12, borderRadius: 14, textAlign: "center", marginBottom: 16, fontWeight: 700 }}>
-              👀 Spectator Mode
+            /* GAME OVER LEADERBOARD VIEW */
+            <div style={{ background: "#fff", borderRadius: 22, padding: 24, boxShadow: "0 8px 24px rgba(30,50,20,0.12)", textAlign: "center" }}>
+              <Trophy size={48} color={AMBER} style={{ marginBottom: 10 }} />
+              <div style={{ fontSize: 26, fontWeight: 900, color: INK, marginBottom: 4 }}>Game Over!</div>
+              <div style={{ fontSize: 16, color: PURPLE, fontWeight: 800, marginBottom: 20 }}>
+                👑 {leaderboard[0]?.name} Wins!
+              </div>
+
+              {/* Leaderboard Table */}
+              <div style={{ textAlign: "left", marginBottom: 24 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "#6B7C6B", textTransform: "uppercase", marginBottom: 8 }}>
+                  Final Standings
+                </div>
+                {leaderboard.map((p, idx) => (
+                  <div 
+                    key={p.id} 
+                    style={{ 
+                      display: "flex", 
+                      justifySpace: "between", 
+                      alignItems: "center", 
+                      padding: "12px 14px", 
+                      background: idx === 0 ? MINT : "#F8FAF8", 
+                      borderRadius: 12, 
+                      marginBottom: 8, 
+                      border: idx === 0 ? "1.5px solid #C7E2C4" : "1px solid #EFF5EC" 
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontWeight: 800, fontSize: 16, color: idx === 0 ? GREEN_DK : "#6B7C6B", width: 20 }}>
+                        #{idx + 1}
+                      </span>
+                      <span style={{ fontWeight: 700, color: INK, fontSize: 16 }}>
+                        {p.name} {idx === 0 && "🏆"}
+                      </span>
+                    </div>
+                    <span style={{ fontWeight: 800, color: PURPLE, fontSize: 15 }}>
+                      {p.cardCount} {p.cardCount === 1 ? "card" : "cards"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Reshuffle & Play Again Action */}
+              {room.hostId === myId ? (
+                <button 
+                  onClick={reshuffleAndPlayAgain} 
+                  style={{ 
+                    width: "100%", padding: 14, borderRadius: 14, background: GREEN_DK, 
+                    color: "#fff", border: "none", fontWeight: 800, fontSize: 16, 
+                    cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 
+                  }}
+                >
+                  <RefreshCw size={18} /> Reshuffle & Play Again
+                </button>
+              ) : (
+                <div style={{ color: "#6B7C6B", fontWeight: 600, fontSize: 15 }}>
+                  Waiting for host to restart game...
+                </div>
+              )}
             </div>
           ) : (
-            <div style={{ background: isMyTurn ? GREEN_DK : "#fff", color: isMyTurn ? "#fff" : INK, padding: 12, borderRadius: 14, textAlign: "center", marginBottom: 16, fontWeight: 800, border: isMyTurn ? "none" : "2px solid #DCEEDA" }}>
-              {isMyTurn ? "✨ Your Turn — Choose a Stat!" : `Waiting for ${room.players.find(p => p.id === room.pickerId)?.name || "player"}...`}
-            </div>
+            /* ACTIVE GAMEPLAY VIEW */
+            <>
+              {isSpectator ? (
+                <div style={{ background: INK, color: "#fff", padding: 12, borderRadius: 14, textAlign: "center", marginBottom: 16, fontWeight: 700 }}>
+                  👀 Spectator Mode
+                </div>
+              ) : (
+                <div style={{ background: isMyTurn ? GREEN_DK : "#fff", color: isMyTurn ? "#fff" : INK, padding: 12, borderRadius: 14, textAlign: "center", marginBottom: 16, fontWeight: 800, border: isMyTurn ? "none" : "2px solid #DCEEDA" }}>
+                  {isMyTurn ? "✨ Your Turn — Choose a Stat!" : `Waiting for ${room.players.find(p => p.id === room.pickerId)?.name || "player"}...`}
+                </div>
+              )}
+
+              {/* Player Hand info */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, padding: "0 4px" }}>
+                <span style={{ fontWeight: 800, color: INK }}>You have {myHand.length} cards</span>
+                {room.pile?.length > 0 && <span style={{ color: AMBER, fontWeight: 800 }}>Pot: {room.pile.length} cards</span>}
+              </div>
+
+              {/* Primary Card View */}
+              {activeCard ? (
+                <FundCard 
+                  card={activeCard} 
+                  interactive={isMyTurn && room.status === "playing"} 
+                  onPick={chooseCategory} 
+                  highlightKey={room.round?.category}
+                />
+              ) : (
+                <div style={{ background: "#fff", borderRadius: 22, padding: 40, textAlign: "center", color: "#6B7C6B", fontWeight: 700 }}>
+                  {myHand.length === 0 ? "You're out of cards!" : "Loading active card..."}
+                </div>
+              )}
+
+              {/* Action Logs */}
+              <div style={{ marginTop: 20, background: "#fff", borderRadius: 16, padding: 16, border: "1px solid #E3F0E1" }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "#6B7C6B", textTransform: "uppercase", marginBottom: 8 }}>Game Log</div>
+                <div style={{ maxHeight: 100, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
+                  {[...(room.log || [])].reverse().slice(0, 5).map((l, i) => (
+                    <div key={i} style={{ fontSize: 13, color: INK }}>• {l.text}</div>
+                  ))}
+                </div>
+              </div>
+            </>
           )}
-
-          {/* Player Hand info */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, padding: "0 4px" }}>
-            <span style={{ fontWeight: 800, color: INK }}>Cards left: {myHand.length}</span>
-            {room.pile?.length > 0 && <span style={{ color: AMBER, fontWeight: 800 }}>Pot: {room.pile.length} cards</span>}
-          </div>
-
-          {/* Primary Card View */}
-          {activeCard ? (
-            <FundCard 
-              card={activeCard} 
-              interactive={isMyTurn && room.status === "playing"} 
-              onPick={chooseCategory} 
-              highlightKey={room.round?.category}
-            />
-          ) : (
-            <div style={{ background: "#fff", borderRadius: 22, padding: 40, textAlign: "center", color: "#6B7C6B", fontWeight: 700 }}>
-              {myHand.length === 0 ? "You're out of cards!" : "Loading active card..."}
-            </div>
-          )}
-
-          {/* Action Logs */}
-          <div style={{ marginTop: 20, background: "#fff", borderRadius: 16, padding: 16, border: "1px solid #E3F0E1" }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "#6B7C6B", textTransform: "uppercase", marginBottom: 8 }}>Game Log</div>
-            <div style={{ maxHeight: 100, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
-              {[...(room.log || [])].reverse().slice(0, 5).map((l, i) => (
-                <div key={i} style={{ fontSize: 13, color: INK }}>• {l.text}</div>
-              ))}
-            </div>
-          </div>
         </div>
       )}
     </div>
