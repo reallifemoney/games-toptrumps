@@ -375,21 +375,143 @@ export default function App() {
     setBusy(false);
   }
 
-  async function joinGame() {
-    setError("");
-    if (!nameInput.trim() || !joinCodeInput.trim()) return setError("Enter your name and the room code");
-    setBusy(true);
-    const code = joinCodeInput.trim().toUpperCase();
-    const r = await loadRoom(code);
-    if (!r) { setBusy(false); return setError("Room not found — check the code"); }
-    if (r.status !== "lobby") { setBusy(false); return setError("That game has already started"); }
-    const me = { id: myId, name: nameInput.trim() };
-    const updated = { ...r, players: [...r.players, me], log: [...r.log, { text: `${me.name} joined`, ts: Date.now() }] };
-    await saveRoom(updated);
-    setRoomCode(code);
-    setScreen("lobby");
-    setBusy(false);
+function AdminModal({ onClose, onSpectate }) {
+  const [allRooms, setAllRooms] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const roomsRef = ref(db, "rooms");
+    const handler = onValue(roomsRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.val();
+        const list = Object.keys(data).map(code => ({ code, ...data[code] }));
+        // Sort most recently updated first
+        list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+        setAllRooms(list);
+      } else {
+        setAllRooms([]);
+      }
+      setLoading(false);
+    });
+    return () => off(roomsRef, "value", handler);
+  }, []);
+
+  return (
+    <Modal title="🛡️ Admin Control Panel" onClose={onClose}>
+      <div style={{ fontSize: 14, color: "#6B7C6B", marginBottom: 16 }}>
+        Live Firebase Room Monitoring
+      </div>
+      
+      {loading ? (
+        <div style={{ textAlign: "center", padding: 20 }}>Loading live rooms...</div>
+      ) : allRooms.length === 0 ? (
+        <div style={{ textAlign: "center", padding: 20, color: "#9AA89A" }}>No active rooms found.</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {allRooms.map(r => (
+            <div key={r.code} style={{
+              background: MINT, padding: 16, borderRadius: 14, border: "1.5px solid #C7E2C4",
+              display: "flex", flexDirection: "column", gap: 8
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <span style={{ fontWeight: 900, fontSize: 18, color: PURPLE, marginRight: 10 }}>
+                    {r.code}
+                  </span>
+                  <span style={{
+                    fontSize: 12, fontWeight: 800, textTransform: "uppercase", padding: "3px 8px", borderRadius: 6,
+                    background: r.status === "playing" ? GREEN : r.status === "ended" ? "#E0E0E0" : "#EBF3E8",
+                    color: r.status === "playing" ? "#fff" : INK
+                  }}>
+                    {r.status}
+                  </span>
+                </div>
+                
+                <button 
+                  onClick={() => onSpectate(r.code)}
+                  style={{
+                    padding: "6px 14px", borderRadius: 10, border: `1.5px solid ${PURPLE}`, background: "#fff",
+                    color: PURPLE, fontWeight: 700, fontSize: 13, cursor: "pointer"
+                  }}
+                >
+                  Spectate
+                </button>
+              </div>
+
+              <div style={{ fontSize: 13, color: INK }}>
+                <b>Players ({r.players?.length || 0}):</b> {r.players?.map(p => p.name).join(", ")}
+              </div>
+              
+              <div style={{ fontSize: 12, color: "#9AA89A" }}>
+                Cards remaining: {Object.values(r.hands || {}).reduce((acc, h) => acc + h.length, 0)}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+// Add state inside App()
+const [showAdmin, setShowAdmin] = useState(false);
+const [logoTaps, setLogoTaps] = useState(0);
+
+// Secret Tap Handler on Logo
+function handleLogoClick() {
+  if (logoTaps + 1 >= 5) {
+    setShowAdmin(true);
+    setLogoTaps(0);
+  } else {
+    setLogoTaps(prev => prev + 1);
   }
+}
+
+// Modify joinGame check inside your App component:
+const handleJoinClick = () => {
+  if (joinCodeInput.toLowerCase() === "rlmadmin") {
+    setShowAdmin(true);
+    setJoinCodeInput("");
+    return;
+  }
+  joinGame();
+};
+
+async function joinGame(codeToJoin = null, asSpectator = false) {
+  setError("");
+  const code = (codeToJoin || joinCodeInput).trim().toUpperCase();
+  const name = nameInput.trim() || (asSpectator ? "Admin (Viewer)" : "");
+  
+  if (!code) return setError("Enter a room code");
+  if (!asSpectator && !name) return setError("Enter your name first");
+  
+  setBusy(true);
+  const r = await loadRoom(code);
+  if (!r) { setBusy(false); return setError("Room not found"); }
+  
+  // If not spectating and game already started, block them
+  if (r.status !== "lobby" && !asSpectator) {
+    setBusy(false);
+    return setError("That game has already started");
+  }
+
+  const me = { id: myId, name: asSpectator ? "👀 Admin" : name, isSpectator: asSpectator };
+  
+  // Don't duplicate player in list if re-joining
+  const existingPlayers = r.players || [];
+  const alreadyIn = existingPlayers.some(p => p.id === myId);
+  
+  const updated = { 
+    ...r, 
+    players: alreadyIn ? existingPlayers : [...existingPlayers, me],
+    log: [...(r.log || []), { text: `${me.name} ${asSpectator ? "joined as viewer" : "joined"}`, ts: Date.now() }] 
+  };
+  
+  await saveRoom(updated);
+  setRoomCode(code);
+  setScreen("game");
+  setBusy(false);
+}
 
   async function exitGame() {
     if (roomCode && room) {
@@ -526,7 +648,12 @@ export default function App() {
       {screen === "home" && (
         <div style={{ maxWidth: 440, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 24 }}>
-            <img src={logoImg} alt="Top Funds Logo" style={{ maxHeight: 150, maxWidth: "100%", objectFit: "contain" }} />
+            <img 
+  src={logoImg} 
+  alt="Top Funds Logo" 
+  onClick={handleLogoClick}
+  style={{ maxHeight: 150, maxWidth: "100%", objectFit: "contain", cursor: "pointer" }} 
+/>
           </div>
           <div style={{ background: "#fff", borderRadius: 20, padding: 24, boxShadow: "0 6px 18px rgba(30,50,20,0.08)", marginBottom: 16 }}>
             <label style={{ fontSize: 14, fontWeight: 700, color: INK }}>Your name</label>
@@ -549,6 +676,17 @@ export default function App() {
           </div>
         </div>
       )}
+
+{/* Amin modal */}
+      {showAdmin && (
+  <AdminModal 
+    onClose={() => setShowAdmin(false)} 
+    onSpectate={(code) => {
+      setShowAdmin(false);
+      joinGame(code, true);
+    }}
+  />
+)}
 
       {/* Screen 2: Lobby */}
       {screen === "lobby" && (
