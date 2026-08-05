@@ -310,20 +310,59 @@ function CardsBrowserModal({ onClose }) {
 function AdminModal({ onClose, onSpectate }) {
   const [allRooms, setAllRooms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     const roomsRef = ref(db, "rooms");
-    const handler = onValue(roomsRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.val();
-        const list = Object.keys(data).map(code => ({ code, ...data[code] }));
-        list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-        setAllRooms(list);
-      } else {
+
+    const parseRooms = (snap) => {
+      if (!snap.exists()) return [];
+
+      const data = snap.val();
+      if (!data || typeof data !== "object") return [];
+
+      return Object.entries(data)
+        .map(([code, room]) => ({
+          code,
+          ...(room && typeof room === "object" ? room : {}),
+        }))
+        .filter(Boolean)
+        .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    };
+
+    const handleSnapshot = (snap) => {
+      try {
+        setAllRooms(parseRooms(snap));
+        setLoadError("");
+      } catch (error) {
+        console.error("Failed to read rooms for admin panel", error);
         setAllRooms([]);
+        setLoadError("Unable to read live rooms right now.");
+      } finally {
+        setLoading(false);
       }
+    };
+
+    const loadRooms = async () => {
+      try {
+        const snap = await get(roomsRef);
+        handleSnapshot(snap);
+      } catch (error) {
+        console.error("Failed to load rooms for admin panel", error);
+        setAllRooms([]);
+        setLoadError("Unable to read live rooms right now.");
+        setLoading(false);
+      }
+    };
+
+    loadRooms();
+    const handler = onValue(roomsRef, handleSnapshot, (error) => {
+      console.error("Realtime rooms listener failed", error);
+      setAllRooms([]);
+      setLoadError("Unable to read live rooms right now.");
       setLoading(false);
     });
+
     return () => off(roomsRef, "value", handler);
   }, []);
 
@@ -331,6 +370,8 @@ function AdminModal({ onClose, onSpectate }) {
     <Modal title="🛡️ Admin Control Panel" onClose={onClose}>
       {loading ? (
         <div style={{ textAlign: "center", padding: 20 }}>Loading live rooms...</div>
+      ) : loadError ? (
+        <div style={{ textAlign: "center", padding: 20, color: RED }}>{loadError}</div>
       ) : allRooms.length === 0 ? (
         <div style={{ textAlign: "center", padding: 20, color: "#9AA89A" }}>No active rooms found.</div>
       ) : (
@@ -767,7 +808,7 @@ useEffect(() => {
                         {p.name} {idx === 0 && "🏆"}
                       </span>
                     </div>
-                    <span style={{ fontWeight: 800, color: PURPLE, fontSize: 15 }}>
+                    <span style={{ fontWeight: 800, color: PURPLE, fontSize: 15, whiteSpace: "nowrap" }}>
                       {p.cardCount} {p.cardCount === 1 ? "card" : "cards"}
                     </span>
                   </div>
@@ -795,22 +836,6 @@ useEffect(() => {
           ) : (
             /* ACTIVE GAMEPLAY VIEW */
             <>
-              {isSpectator ? (
-                <div style={{ background: INK, color: "#fff", padding: 12, borderRadius: 14, textAlign: "center", marginBottom: 16, fontWeight: 700 }}>
-                  👀 Spectator Mode
-                </div>
-              ) : (
-                <div style={{ background: isMyTurn ? GREEN_DK : "#fff", color: isMyTurn ? "#fff" : INK, padding: 12, borderRadius: 14, textAlign: "center", marginBottom: 16, fontWeight: 800, border: isMyTurn ? "none" : "2px solid #DCEEDA" }}>
-                  {isMyTurn ? "✨ Your Turn — Choose a Stat!" : `Waiting for ${room.players.find(p => p.id === room.pickerId)?.name || "player"}...`}
-                </div>
-              )}
-
-              {/* Player Hand info */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, padding: "0 4px" }}>
-                <span style={{ fontWeight: 800, color: INK }}>You have {myHand.length} cards</span>
-                {room.pile?.length > 0 && <span style={{ color: AMBER, fontWeight: 800 }}>Pot: {room.pile.length} cards</span>}
-              </div>
-
               {/* Round result banner */}
               <div style={{ background: isMyTurn ? GREEN_DK : "#fff", color: isMyTurn ? "#fff" : INK, padding: 14, borderRadius: 14, textAlign: "center", marginBottom: 16, fontWeight: 800, border: isMyTurn ? "none" : "2px solid #DCEEDA" }}>
                 {roundSummary ? (
