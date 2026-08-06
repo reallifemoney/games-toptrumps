@@ -198,15 +198,17 @@ function FundCard({ card, interactive, onPick, highlightKey, dim, pendingSelecti
           const body = cat.key === "esg" ? <Stars n={raw} /> : <StatValue v={raw !== null && raw !== undefined ? cat.fmt(raw) : "N/A"} />;
           const clickable = interactive && typeof onPick === "function";
           return (
-            <div key={cat.key} style={{ margin: "2px 0" }}>
+            <div key={cat.key} style={{ margin: "2px 0", position: "relative", borderRadius: 10, overflow: "hidden" }}>
               {isPendingSelection && (
-                <div style={{ height: 7, borderRadius: 999, background: "#E8F6E2", overflow: "hidden", marginBottom: 8 }}>
-                  <div style={{ width: `${Math.max(0, Math.min(100, pendingProgress * 100))}%`, height: "100%", background: GREEN_DK, borderRadius: 999, transition: "width 0.1s linear" }} />
-                </div>
+                <div style={{
+                  position: "absolute", inset: 0, width: `${Math.max(0, Math.min(100, pendingProgress * 100))}%`,
+                  background: GREEN_DK, opacity: 0.16, transition: "width 0.1s linear"
+                }} />
               )}
               <div
                 onClick={clickable ? () => onPick(cat.key) : undefined}
                 style={{
+                  position: "relative",
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   padding: "12px 10px", borderBottom: "1px solid #EFF5EC", cursor: clickable ? "pointer" : "default",
                   background: isHighlight || isPendingSelection ? MINT : "transparent", borderRadius: 10,
@@ -229,16 +231,16 @@ function FundCard({ card, interactive, onPick, highlightKey, dim, pendingSelecti
 }
 
 // ---------- Modals ----------
-function Modal({ title, onClose, children }) {
+function Modal({ title, onClose, children, fullScreen = false }) {
   return (
     <div style={{
       position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
       background: "rgba(15, 25, 15, 0.6)", display: "flex", alignItems: "center", justifyContent: "center",
-      zIndex: 1000, padding: 16,
+      zIndex: 1000, padding: fullScreen ? 0 : 16,
     }}>
       <div style={{
-        background: "#fff", borderRadius: 22, width: "100%", maxWidth: 480, maxHeight: "85vh",
-        display: "flex", flexDirection: "column", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", overflow: "hidden",
+        background: "#fff", borderRadius: fullScreen ? 0 : 22, width: "100%", maxWidth: fullScreen ? "100%" : 480, maxHeight: fullScreen ? "100vh" : "85vh",
+        minHeight: fullScreen ? "100vh" : "auto", display: "flex", flexDirection: "column", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", overflow: "hidden",
       }}>
         <div style={{
           padding: "18px 22px", borderBottom: "1px solid #EFF5EC", display: "flex",
@@ -351,8 +353,8 @@ function CompareCardsModal({ onClose, players, round }) {
   }
 
   return (
-    <Modal title="Compare these cards" onClose={onClose}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+    <Modal title="Compare these cards" onClose={onClose} fullScreen>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, minHeight: "100%", padding: 8 }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <button onClick={() => setActiveIndex((prev) => (prev === 0 ? cards.length - 1 : prev - 1))} style={{ border: "1px solid #DCEEDA", background: MINT, borderRadius: 999, width: 38, height: 38, cursor: "pointer" }} aria-label="Previous card">←</button>
           <div style={{ fontWeight: 800, color: INK }}>{activeCard.player.name}</div>
@@ -365,6 +367,11 @@ function CompareCardsModal({ onClose, players, round }) {
           ))}
         </div>
         <FundCard card={activeCard.card} interactive={false} />
+        <div style={{ marginTop: "auto", paddingTop: 12 }}>
+          <button onClick={onClose} style={{ width: "100%", padding: "12px 14px", borderRadius: 14, border: "none", background: GREEN_DK, color: "#fff", fontWeight: 800, cursor: "pointer" }}>
+            Continue playing
+          </button>
+        </div>
       </div>
     </Modal>
   );
@@ -891,6 +898,7 @@ useEffect(() => {
 
   return (
     <div style={wrap}>
+      <style>{`button, input, select, textarea { font-family: 'Lexend', sans-serif; }`}</style>
       {/* Header Bar */}
       <div style={{ maxWidth: 480, margin: "0 auto 18px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         {screen !== "home" ? (
@@ -945,7 +953,7 @@ useEffect(() => {
             </div>
             
             <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setShowCompareCards(true)} style={{ flex: 1, padding: "10px 12px", borderRadius: 12, border: `1px solid ${PURPLE}`, background: "#fff", color: PURPLE, fontWeight: 800, cursor: "pointer" }}>
+              <button onClick={() => { setShowRoundResult(false); setShowCompareCards(true); }} style={{ flex: 1, padding: "10px 12px", borderRadius: 12, border: `1px solid ${PURPLE}`, background: "#fff", color: PURPLE, fontWeight: 800, cursor: "pointer" }}>
                 Compare these cards
               </button>
               <button onClick={() => setShowRoundResult(false)} style={{ flex: 1, padding: "10px 12px", borderRadius: 12, border: "none", background: GREEN_DK, color: "#fff", fontWeight: 800, cursor: "pointer" }}>
@@ -1147,7 +1155,7 @@ useEffect(() => {
                   })}
                 </div>
               ) : activeCard ? (
-                <div style={{ border: isMyTurn ? `2px solid ${GREEN_DK}` : "2px solid transparent", borderRadius: 24, padding: isMyTurn ? 6 : 0, background: isMyTurn ? "#f6fff1" : "transparent", boxShadow: isMyTurn ? "0 8px 24px rgba(63, 126, 39, 0.16)" : "none" }}>
+                <div style={{ border: isMyTurn ? `2px solid ${GREEN_DK}` : "2px solid transparent", borderRadius: 24, background: isMyTurn ? "#f6fff1" : "transparent", boxShadow: isMyTurn ? "0 8px 24px rgba(63, 126, 39, 0.16)" : "none", overflow: "hidden", width: "100%" }}>
                   <FundCard 
                     card={activeCard} 
                     interactive={isMyTurn && room.status === "playing"} 
