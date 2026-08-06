@@ -165,7 +165,7 @@ function RiskScale({ risk }) {
   );
 }
 
-function FundCard({ card, interactive, onPick, highlightKey, dim }) {
+function FundCard({ card, interactive, onPick, highlightKey, dim, pendingSelectionKey, pendingProgress }) {
   if (!card) return null;
   return (
     <div style={{
@@ -193,26 +193,33 @@ function FundCard({ card, interactive, onPick, highlightKey, dim }) {
         {CATEGORIES.map(cat => {
           const raw = card.stats ? card.stats[cat.key] : null;
           const isHighlight = highlightKey === cat.key;
+          const isPendingSelection = pendingSelectionKey === cat.key && typeof pendingProgress === "number";
           const Icon = cat.icon;
           const body = cat.key === "esg" ? <Stars n={raw} /> : <StatValue v={raw !== null && raw !== undefined ? cat.fmt(raw) : "N/A"} />;
           const clickable = interactive && typeof onPick === "function";
           return (
-            <div
-              key={cat.key}
-              onClick={clickable ? () => onPick(cat.key) : undefined}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "12px 10px", borderBottom: "1px solid #EFF5EC", cursor: clickable ? "pointer" : "default",
-                background: isHighlight ? MINT : "transparent", borderRadius: 10, margin: "2px 0",
-                transition: "background 0.15s",
-              }}
-            >
+            <div key={cat.key} style={{ margin: "2px 0" }}>
+              {isPendingSelection && (
+                <div style={{ height: 7, borderRadius: 999, background: "#E8F6E2", overflow: "hidden", marginBottom: 8 }}>
+                  <div style={{ width: `${Math.max(0, Math.min(100, pendingProgress * 100))}%`, height: "100%", background: GREEN_DK, borderRadius: 999, transition: "width 0.1s linear" }} />
+                </div>
+              )}
+              <div
+                onClick={clickable ? () => onPick(cat.key) : undefined}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "12px 10px", borderBottom: "1px solid #EFF5EC", cursor: clickable ? "pointer" : "default",
+                  background: isHighlight || isPendingSelection ? MINT : "transparent", borderRadius: 10,
+                  transition: "background 0.15s",
+                }}
+              >
               <div style={{ display: "flex", alignItems: "center", gap: 10, color: INK, fontWeight: 600, fontSize: 15 }}>
                 <Icon size={18} color={PURPLE} />
                 {cat.label}
                 {cat.note && <span style={{ fontSize: 11.5, color: "#9AA89A", fontWeight: 500 }}>({cat.note})</span>}
               </div>
-              <div style={{ fontSize: 15.5 }}>{body}</div>
+                <div style={{ fontSize: 15.5 }}>{body}</div>
+              </div>
             </div>
           );
         })}
@@ -303,6 +310,61 @@ function CardsBrowserModal({ onClose }) {
         {filtered.map(card => (
           <FundCard key={card.id} card={card} interactive={false} />
         ))}
+      </div>
+    </Modal>
+  );
+}
+
+function CompareCardsModal({ onClose, players, round }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [touchStartX, setTouchStartX] = useState(null);
+  const cards = (players || []).map(player => ({
+    player,
+    card: round?.revealed?.[player.id] ? CARD_MAP[round.revealed[player.id]] : null,
+  })).filter(item => item.card);
+
+  const activeCard = cards[activeIndex] || null;
+
+  const handleTouchStart = (event) => {
+    setTouchStartX(event.touches[0]?.clientX ?? null);
+  };
+
+  const handleTouchEnd = (event) => {
+    if (touchStartX === null) return;
+    const touchEndX = event.changedTouches[0]?.clientX ?? null;
+    if (touchEndX === null) return;
+
+    if (touchEndX - touchStartX > 50) {
+      setActiveIndex(prev => (prev === 0 ? cards.length - 1 : prev - 1));
+    } else if (touchStartX - touchEndX > 50) {
+      setActiveIndex(prev => (prev === cards.length - 1 ? 0 : prev + 1));
+    }
+    setTouchStartX(null);
+  };
+
+  if (cards.length === 0) {
+    return (
+      <Modal title="Compare these cards" onClose={onClose}>
+        <div style={{ color: INK, fontWeight: 700, textAlign: "center" }}>No cards were revealed for this round.</div>
+      </Modal>
+    );
+  }
+
+  return (
+    <Modal title="Compare these cards" onClose={onClose}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <button onClick={() => setActiveIndex((prev) => (prev === 0 ? cards.length - 1 : prev - 1))} style={{ border: "1px solid #DCEEDA", background: MINT, borderRadius: 999, width: 38, height: 38, cursor: "pointer" }} aria-label="Previous card">←</button>
+          <div style={{ fontWeight: 800, color: INK }}>{activeCard.player.name}</div>
+          <button onClick={() => setActiveIndex((prev) => (prev === cards.length - 1 ? 0 : prev + 1))} style={{ border: "1px solid #DCEEDA", background: MINT, borderRadius: 999, width: 38, height: 38, cursor: "pointer" }} aria-label="Next card">→</button>
+        </div>
+        <div style={{ textAlign: "center", color: "#6B7C6B", fontSize: 12, fontWeight: 700 }}>Swipe or tap the arrows to browse</div>
+        <div style={{ display: "flex", justifyContent: "center", gap: 6 }}>
+          {cards.map((_, idx) => (
+            <div key={idx} style={{ width: 8, height: 8, borderRadius: "50%", background: idx === activeIndex ? GREEN_DK : "#DCEEDA" }} />
+          ))}
+        </div>
+        <FundCard card={activeCard.card} interactive={false} />
       </div>
     </Modal>
   );
@@ -420,6 +482,8 @@ export default function App() {
   const [showAdmin, setShowAdmin] = useState(false);
   const [logoTaps, setLogoTaps] = useState(0);
   const [showRoundResult, setShowRoundResult] = useState(false);
+  const [showCompareCards, setShowCompareCards] = useState(false);
+  const [selectionClock, setSelectionClock] = useState(Date.now());
 
   const listenerRef = useRef(null);
   const lastRoundKeyRef = useRef(null);
@@ -509,6 +573,86 @@ export default function App() {
     }
   }
 
+  async function finalizePendingSelection() {
+    const r = await loadRoom(roomCode);
+    if (!r || r.status !== "playing") return;
+    const pending = r.pendingRound;
+    if (!pending || pending.state !== "pending") return;
+
+    const active = r.players.filter(p => (r.hands?.[p.id] || []).length > 0);
+    if (active.length < 2) return;
+
+    const catKey = pending.category;
+    const cat = CATEGORIES.find(c => c.key === catKey);
+    if (!cat) return;
+
+    const revealed = {};
+    active.forEach(p => { revealed[p.id] = r.hands[p.id][0]; });
+    const values = {};
+    active.forEach(p => { values[p.id] = CARD_MAP[revealed[p.id]]?.stats?.[catKey]; });
+
+    const scored = active.map(p => {
+      const v = values[p.id];
+      const s = (v === null || v === undefined) ? (cat.higherWins ? -Infinity : Infinity) : v;
+      return { pid: p.id, s };
+    });
+
+    const best = cat.higherWins ? Math.max(...scored.map(e => e.s)) : Math.min(...scored.map(e => e.s));
+    const winners = scored.filter(e => e.s === best).map(e => e.pid);
+    const isTie = winners.length > 1;
+
+    const newHands = { ...r.hands };
+    active.forEach(p => { newHands[p.id] = newHands[p.id].slice(1); });
+    let newPile = [...(r.pile || [])];
+    let logText;
+
+    if (isTie) {
+      active.forEach(p => newPile.push(revealed[p.id]));
+      logText = `Tie on ${cat.label}! ${newPile.length} cards in the pot.`;
+    } else {
+      const winnerId = winners[0];
+      const winnerName = r.players.find(p => p.id === winnerId)?.name || "Player";
+      const wonCards = shuffle([...active.map(p => revealed[p.id]), ...newPile]);
+      newHands[winnerId] = [...newHands[winnerId], ...wonCards];
+      newPile = [];
+      logText = `${winnerName} won round on ${cat.label}!`;
+    }
+
+    const stillActive = r.players.filter(p => (newHands[p.id] || []).length > 0);
+    let nextPicker = isTie ? pending.pickerId : winners[0];
+    if (!stillActive.some(p => p.id === nextPicker)) nextPicker = stillActive[0]?.id;
+
+    let status = r.status;
+    if (stillActive.length <= 1) status = "ended";
+
+    const updated = {
+      ...r,
+      hands: newHands,
+      pile: newPile,
+      pickerId: nextPicker,
+      status,
+      pendingRound: null,
+      round: { category: catKey, revealed, values, winners, isTie, pickerId: pending.pickerId, ts: Date.now() },
+      log: [...(r.log || []), { text: logText, ts: Date.now() }].slice(-40),
+    };
+    await saveRoom(updated);
+    setShowRoundResult(true);
+  }
+
+  useEffect(() => {
+    if (!room?.pendingRound || room.pendingRound.state !== "pending") return;
+    const interval = window.setInterval(() => setSelectionClock(Date.now()), 100);
+    return () => window.clearInterval(interval);
+  }, [room?.pendingRound?.startedAt, room?.pendingRound?.category, room?.pendingRound?.pickerId, room?.pendingRound?.state]);
+
+  useEffect(() => {
+    if (!room?.pendingRound || room.pendingRound.state !== "pending") return;
+    const elapsed = Date.now() - room.pendingRound.startedAt;
+    if (elapsed >= 3000) {
+      finalizePendingSelection();
+    }
+  }, [selectionClock, room?.pendingRound?.startedAt, room?.pendingRound?.category, room?.pendingRound?.pickerId, room?.pendingRound?.state]);
+
   async function hostGame() {
     setError("");
     setShowRoundResult(false);
@@ -551,6 +695,15 @@ useEffect(() => {
   const timer = window.setTimeout(() => launchWinnerConfetti(), 120);
   return () => window.clearTimeout(timer);
 }, [room?.status, room?.players, room?.hands, myId]);
+
+useEffect(() => {
+  if (!showRoundResult || !room?.round || room.status !== "playing") return;
+  if (room.round.isTie) return;
+  if (!room.round.winners?.includes(myId)) return;
+
+  const timer = window.setTimeout(() => launchWinnerConfetti(), 140);
+  return () => window.clearTimeout(timer);
+}, [showRoundResult, room?.round?.ts, room?.round?.winners, room?.round?.isTie, room?.status, myId]);
 
   async function joinGame(codeToJoin = null, asSpectator = false) {
     setError("");
@@ -615,7 +768,7 @@ useEffect(() => {
     r.players.forEach(p => { hands[p.id] = []; });
     deckIds.forEach((id, i) => hands[r.players[i % n].id].push(id));
     const updated = {
-      ...r, status: "playing", hands, pickerId: r.players[0].id, pile: [], round: null,
+      ...r, status: "playing", hands, pickerId: r.players[0].id, pile: [], round: null, pendingRound: null,
       log: [...r.log, { text: "Game started — cards dealt!", ts: Date.now() }],
     };
     setShowRoundResult(false);
@@ -630,53 +783,18 @@ useEffect(() => {
     const r = await loadRoom(roomCode);
     if (!r || r.status !== "playing") return;
     const active = r.players.filter(p => (r.hands?.[p.id] || []).length > 0);
-    if (r.pickerId !== myId || active.length < 2) return;
-    
+    if (r.pickerId !== myId || active.length < 2 || r.pendingRound?.state === "pending") return;
+
     const cat = CATEGORIES.find(c => c.key === catKey);
-    const revealed = {};
-    active.forEach(p => { revealed[p.id] = r.hands[p.id][0]; });
-    const values = {};
-    active.forEach(p => { values[p.id] = CARD_MAP[revealed[p.id]]?.stats?.[catKey]; });
-    
-    const scored = active.map(p => {
-      const v = values[p.id];
-      const s = (v === null || v === undefined) ? (cat.higherWins ? -Infinity : Infinity) : v;
-      return { pid: p.id, s };
-    });
-    
-    const best = cat.higherWins ? Math.max(...scored.map(e => e.s)) : Math.min(...scored.map(e => e.s));
-    const winners = scored.filter(e => e.s === best).map(e => e.pid);
-    const isTie = winners.length > 1;
-
-    const newHands = { ...r.hands };
-    active.forEach(p => { newHands[p.id] = newHands[p.id].slice(1); });
-    let newPile = [...(r.pile || [])];
-    let logText;
-
-    if (isTie) {
-      active.forEach(p => newPile.push(revealed[p.id]));
-      logText = `Tie on ${cat.label}! ${newPile.length} cards in the pot.`;
-    } else {
-      const winnerId = winners[0];
-      const winnerName = r.players.find(p => p.id === winnerId)?.name || "Player";
-      const wonCards = shuffle([...active.map(p => revealed[p.id]), ...newPile]);
-      newHands[winnerId] = [...newHands[winnerId], ...wonCards];
-      newPile = [];
-      logText = `${winnerName} won round on ${cat.label}!`;
-    }
-
-    const stillActive = r.players.filter(p => (newHands[p.id] || []).length > 0);
-    let nextPicker = isTie ? r.pickerId : winners[0];
-    if (!stillActive.some(p => p.id === nextPicker)) nextPicker = stillActive[0]?.id;
-
-    let status = r.status;
-    if (stillActive.length <= 1) status = "ended";
+    if (!cat) return;
 
     const updated = {
-      ...r, hands: newHands, pile: newPile, pickerId: nextPicker, status,
-      round: { category: catKey, revealed, values, winners, isTie, pickerId: r.pickerId, ts: Date.now() },
-      log: [...(r.log || []), { text: logText, ts: Date.now() }].slice(-40),
+      ...r,
+      pendingRound: { state: "pending", category: catKey, pickerId: r.pickerId, startedAt: Date.now(), label: cat.label },
+      round: null,
+      log: [...(r.log || []), { text: `${r.players.find(p => p.id === myId)?.name || "Player"} selected ${cat.label}...`, ts: Date.now() }].slice(-40),
     };
+    setShowRoundResult(false);
     await saveRoom(updated);
   }
 
@@ -726,6 +844,9 @@ useEffect(() => {
     cardCount: (room.hands?.[p.id] || []).length
   })).sort((a, b) => b.cardCount - a.cardCount) : [];
 
+  const pendingSelection = room?.pendingRound?.state === "pending" ? room.pendingRound : null;
+  const pendingProgress = pendingSelection ? Math.min(1, Math.max(0, (selectionClock - pendingSelection.startedAt) / 3000)) : 0;
+
   const roundSummary = room?.round
     ? (() => {
         if (room.round.isTie) {
@@ -761,7 +882,11 @@ useEffect(() => {
   const nextPicker = room?.players?.find(player => player.id === room?.pickerId);
   const roundResultTitle = room?.round?.isTie
     ? `Tie on ${roundCategory?.label || "this category"}`
-    : `${roundWinner?.name || "Someone"} won this round`;
+    : room?.round?.winners?.includes(myId)
+      ? "You won this round"
+      : `${roundWinner?.name || "Someone"} won this round`;
+  const turnLabel = isMyTurn ? "Your turn" : `${nextPicker?.name || "Player"}'s turn`;
+  const remainingCardsLabel = isSpectator ? "Live view" : `${myHand.length} ${myHand.length === 1 ? "card" : "cards"} remaining`;
   const wrap = { minHeight: "100vh", background: MINT, fontFamily: "'Lexend', sans-serif", padding: "18px 16px 60px" };
 
   return (
@@ -787,6 +912,9 @@ useEffect(() => {
       {showRules && <RulesModal onClose={() => setShowRules(false)} />}
       {showBrowser && <CardsBrowserModal onClose={() => setShowBrowser(false)} />}
       {showAdmin && <AdminModal onClose={() => setShowAdmin(false)} activeRoom={room} onSpectate={(code) => { setShowAdmin(false); joinGame(code, true); }} />}
+      {showCompareCards && room?.round && (
+        <CompareCardsModal onClose={() => setShowCompareCards(false)} players={roundPlayers} round={room.round} />
+      )}
       {showRoundResult && room?.round && room.status === "playing" && (
         <div
           onClick={() => setShowRoundResult(false)}
@@ -816,8 +944,13 @@ useEffect(() => {
               })}
             </div>
             
-            <div style={{ marginTop: 14, textAlign: "center", color: "#6B7C6B", fontSize: 13, fontWeight: 700 }}>
-              Tap anywhere to continue
+            <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setShowCompareCards(true)} style={{ flex: 1, padding: "10px 12px", borderRadius: 12, border: `1px solid ${PURPLE}`, background: "#fff", color: PURPLE, fontWeight: 800, cursor: "pointer" }}>
+                Compare these cards
+              </button>
+              <button onClick={() => setShowRoundResult(false)} style={{ flex: 1, padding: "10px 12px", borderRadius: 12, border: "none", background: GREEN_DK, color: "#fff", fontWeight: 800, cursor: "pointer" }}>
+                Continue
+              </button>
             </div>
           </div>
         </div>
@@ -975,18 +1108,9 @@ useEffect(() => {
                 </div>
               )}
 
-              {/* Round result banner */}
-              <div style={{ background: isMyTurn ? GREEN_DK : "#fff", color: isMyTurn ? "#fff" : INK, padding: 14, borderRadius: 14, textAlign: "center", marginBottom: 16, fontWeight: 800, border: isMyTurn ? "none" : "2px solid #DCEEDA" }}>
-                {roundSummary ? (
-                  <>
-                    <div>{roundSummary.title}</div>
-                    <div style={{ fontSize: 14, marginTop: 4, fontWeight: 700, opacity: 0.95 }}>{roundSummary.body}</div>
-                  </>
-                ) : isMyTurn ? (
-                  "✨ Your turn — choose a stat!"
-                ) : (
-                  `Waiting for ${room.players.find(p => p.id === room.pickerId)?.name || "player"}...`
-                )}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div style={{ fontWeight: 800, color: INK }}>{turnLabel}</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "#6B7C6B" }}>{remainingCardsLabel}</div>
               </div>
 
               {/* Primary Card View */}
@@ -1024,16 +1148,13 @@ useEffect(() => {
                 </div>
               ) : activeCard ? (
                 <div style={{ border: isMyTurn ? `2px solid ${GREEN_DK}` : "2px solid transparent", borderRadius: 24, padding: isMyTurn ? 6 : 0, background: isMyTurn ? "#f6fff1" : "transparent", boxShadow: isMyTurn ? "0 8px 24px rgba(63, 126, 39, 0.16)" : "none" }}>
-                  {isMyTurn && (
-                    <div style={{ marginBottom: 8, textAlign: "center", color: GREEN_DK, fontSize: 13, fontWeight: 800, background: MINT, borderRadius: 999, padding: "6px 10px" }}>
-                      Your turn
-                    </div>
-                  )}
                   <FundCard 
                     card={activeCard} 
                     interactive={isMyTurn && room.status === "playing"} 
                     onPick={chooseCategory} 
-                    highlightKey={room.round?.category}
+                    highlightKey={null}
+                    pendingSelectionKey={pendingSelection?.category}
+                    pendingProgress={pendingProgress}
                   />
                 </div>
               ) : (
