@@ -252,8 +252,8 @@ function Modal({ title, onClose, children, fullScreen = false, compact = false }
       zIndex: 1000, padding: shouldUseFullScreen ? 0 : 16,
     }}>
       <div style={{
-        background: "#fff", borderRadius: shouldUseFullScreen ? 0 : 22, width: "100%", maxWidth: shouldUseFullScreen ? "100%" : 560, maxHeight: shouldUseFullScreen ? "100vh" : "88vh",
-        minHeight: shouldUseFullScreen ? "100vh" : "auto", display: "flex", flexDirection: "column", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", overflow: "hidden",
+        background: "#fff", borderRadius: shouldUseFullScreen ? 0 : 22, width: "100%", maxWidth: shouldUseFullScreen ? "100%" : 560, maxHeight: shouldUseFullScreen ? "100vh" : "100vh",
+        minHeight: shouldUseFullScreen ? "100vh" : "100vh", display: "flex", flexDirection: "column", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", overflow: "hidden",
       }}>
         <div style={{
           padding: isCompact ? "12px 16px" : "18px 22px", borderBottom: "1px solid #EFF5EC", display: "flex",
