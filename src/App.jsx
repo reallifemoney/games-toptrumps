@@ -201,8 +201,8 @@ function FundCard({ card, interactive, onPick, highlightKey, dim, pendingSelecti
             <div key={cat.key} style={{ margin: "2px 0", position: "relative", borderRadius: 10, overflow: "hidden" }}>
               {isPendingSelection && (
                 <div style={{
-                  position: "absolute", inset: 0, width: `${Math.max(0, Math.min(100, pendingProgress * 100))}%`,
-                  background: GREEN_DK, opacity: 0.16, transition: "width 0.1s linear"
+                  position: "absolute", left: 0, top: 0, height: 3, width: `${Math.max(0, Math.min(100, pendingProgress * 100))}%`,
+                  background: GREEN_DK, borderRadius: 999, transition: "width 0.1s linear"
                 }} />
               )}
               <div
@@ -211,15 +211,15 @@ function FundCard({ card, interactive, onPick, highlightKey, dim, pendingSelecti
                   position: "relative",
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   padding: "12px 10px", borderBottom: "1px solid #EFF5EC", cursor: clickable ? "pointer" : "default",
-                  background: isHighlight || isPendingSelection ? MINT : "transparent", borderRadius: 10,
+                  background: isHighlight ? MINT : "transparent", borderRadius: 10,
                   transition: "background 0.15s",
                 }}
               >
-              <div style={{ display: "flex", alignItems: "center", gap: 10, color: INK, fontWeight: 600, fontSize: 15 }}>
-                <Icon size={18} color={PURPLE} />
-                {cat.label}
-                {cat.note && <span style={{ fontSize: 11.5, color: "#9AA89A", fontWeight: 500 }}>({cat.note})</span>}
-              </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, color: INK, fontWeight: 600, fontSize: 15 }}>
+                  <Icon size={18} color={PURPLE} />
+                  {cat.label}
+                  {cat.note && <span style={{ fontSize: 11.5, color: "#9AA89A", fontWeight: 500 }}>({cat.note})</span>}
+                </div>
                 <div style={{ fontSize: 15.5 }}>{body}</div>
               </div>
             </div>
@@ -231,27 +231,40 @@ function FundCard({ card, interactive, onPick, highlightKey, dim, pendingSelecti
 }
 
 // ---------- Modals ----------
-function Modal({ title, onClose, children, fullScreen = false }) {
+function Modal({ title, onClose, children, fullScreen = false, compact = false }) {
+  const [isMobile, setIsMobile] = useState(() => (typeof window !== "undefined" ? window.innerWidth < 768 : false));
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const shouldUseFullScreen = fullScreen && isMobile;
+  const isCompact = compact || !shouldUseFullScreen;
+
   return (
     <div style={{
       position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
       background: "rgba(15, 25, 15, 0.6)", display: "flex", alignItems: "center", justifyContent: "center",
-      zIndex: 1000, padding: fullScreen ? 0 : 16,
+      zIndex: 1000, padding: shouldUseFullScreen ? 0 : 16,
     }}>
       <div style={{
-        background: "#fff", borderRadius: fullScreen ? 0 : 22, width: "100%", maxWidth: fullScreen ? "100%" : 480, maxHeight: fullScreen ? "100vh" : "85vh",
-        minHeight: fullScreen ? "100vh" : "auto", display: "flex", flexDirection: "column", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", overflow: "hidden",
+        background: "#fff", borderRadius: shouldUseFullScreen ? 0 : 22, width: "100%", maxWidth: shouldUseFullScreen ? "100%" : 560, maxHeight: shouldUseFullScreen ? "100vh" : "88vh",
+        minHeight: shouldUseFullScreen ? "100vh" : "auto", display: "flex", flexDirection: "column", boxShadow: "0 10px 30px rgba(0,0,0,0.2)", overflow: "hidden",
       }}>
         <div style={{
-          padding: "18px 22px", borderBottom: "1px solid #EFF5EC", display: "flex",
+          padding: isCompact ? "12px 16px" : "18px 22px", borderBottom: "1px solid #EFF5EC", display: "flex",
           justifyContent: "space-between", alignItems: "center", background: MINT,
         }}>
-          <div style={{ fontWeight: 800, fontSize: 20, color: INK }}>{title}</div>
+          <div style={{ fontWeight: 800, fontSize: isCompact ? 17 : 20, color: INK }}>{title}</div>
           <button onClick={onClose} style={{ border: "none", background: "transparent", cursor: "pointer", padding: 4 }}>
             <X size={22} color={INK} />
           </button>
         </div>
-        <div style={{ padding: 22, overflowY: "auto", flex: 1 }}>
+        <div style={{ padding: isCompact ? 14 : 22, overflowY: "auto", flex: 1 }}>
           {children}
         </div>
       </div>
@@ -353,8 +366,8 @@ function CompareCardsModal({ onClose, players, round }) {
   }
 
   return (
-    <Modal title="Compare these cards" onClose={onClose} fullScreen>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12, minHeight: "100%", padding: 8 }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+    <Modal title="Compare these cards" onClose={onClose} fullScreen compact>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, minHeight: "100%", padding: 4 }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <button onClick={() => setActiveIndex((prev) => (prev === 0 ? cards.length - 1 : prev - 1))} style={{ border: "1px solid #DCEEDA", background: MINT, borderRadius: 999, width: 38, height: 38, cursor: "pointer" }} aria-label="Previous card">←</button>
           <div style={{ fontWeight: 800, color: INK }}>{activeCard.player.name}</div>
@@ -898,7 +911,7 @@ useEffect(() => {
 
   return (
     <div style={wrap}>
-      <style>{`button, input, select, textarea { font-family: 'Lexend', sans-serif; }`}</style>
+      <style>{`button, input, select, textarea { font-family: 'Lexend', sans-serif; } @keyframes gentlePulse { 0%, 100% { opacity: 0.95; transform: scale(1); } 50% { opacity: 1; transform: scale(1.015); } } .turn-pill { animation: gentlePulse 1.6s ease-in-out infinite; }`}</style>
       {/* Header Bar */}
       <div style={{ maxWidth: 480, margin: "0 auto 18px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         {screen !== "home" ? (
@@ -1156,6 +1169,11 @@ useEffect(() => {
                 </div>
               ) : activeCard ? (
                 <div style={{ border: isMyTurn ? `2px solid ${GREEN_DK}` : "2px solid transparent", borderRadius: 24, background: isMyTurn ? "#f6fff1" : "transparent", boxShadow: isMyTurn ? "0 8px 24px rgba(63, 126, 39, 0.16)" : "none", overflow: "hidden", width: "100%" }}>
+                  {isMyTurn && (
+                    <div className="turn-pill" style={{ margin: "10px 10px 0", textAlign: "center", color: "#fff", fontSize: 13, fontWeight: 800, background: GREEN_DK, borderRadius: 999, padding: "6px 10px" }}>
+                      Your turn
+                    </div>
+                  )}
                   <FundCard 
                     card={activeCard} 
                     interactive={isMyTurn && room.status === "playing"} 
