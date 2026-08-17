@@ -489,7 +489,7 @@ function AdminModal({ onClose, onSpectate, activeRoom }) {
 // ---------- Main App Component ----------
 export default function App() {
   const [screen, setScreen] = useState("home"); 
-  const [myId] = useState(makeId);
+  const [myId, setMyId] = useState(makeId);
   const [nameInput, setNameInput] = useState("");
   const [joinCodeInput, setJoinCodeInput] = useState("");
   const [roomCode, setRoomCode] = useState("");
@@ -736,23 +736,29 @@ useEffect(() => {
     setBusy(true);
     const r = await loadRoom(code);
     if (!r) { setBusy(false); return setError("Room not found"); }
-    
-    if (r.status !== "lobby" && !asSpectator) {
+
+    const existingPlayers = r.players || [];
+    const existingPlayer = asSpectator
+      ? null
+      : existingPlayers.find(player => !player.isSpectator && player.name.trim().toLocaleLowerCase() === name.toLocaleLowerCase());
+
+    if (r.status !== "lobby" && !asSpectator && !existingPlayer) {
       setBusy(false);
       return setError("That game has already started");
     }
 
-    const me = { id: myId, name: asSpectator ? "👀 Admin" : name, isSpectator: asSpectator };
-    const existingPlayers = r.players || [];
-    const alreadyIn = existingPlayers.some(p => p.id === myId);
+    const playerId = existingPlayer?.id || myId;
+    const me = { id: playerId, name: asSpectator ? "👀 Admin" : name, isSpectator: asSpectator };
+    const alreadyIn = existingPlayers.some(player => player.id === playerId);
     
     const updated = { 
       ...r, 
       players: alreadyIn ? existingPlayers : [...existingPlayers, me],
-      log: [...(r.log || []), { text: `${me.name} ${asSpectator ? "joined as viewer" : "joined"}`, ts: Date.now() }] 
+      log: [...(r.log || []), { text: `${me.name} ${asSpectator ? "joined as viewer" : existingPlayer ? "rejoined" : "joined"}`, ts: Date.now() }] 
     };
     
     await saveRoom(updated);
+    if (existingPlayer) setMyId(existingPlayer.id);
     setShowRoundResult(false);
     setRoomCode(code);
     setScreen(r.status === "playing" ? "game" : "lobby"); 
