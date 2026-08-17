@@ -90,6 +90,14 @@ function makeId() {
   return "p_" + Math.random().toString(36).slice(2, 10);
 }
 
+function normalizePlayerName(name) {
+  return String(name || "")
+    .normalize("NFKC")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase();
+}
+
 function launchWinnerConfetti() {
   if (typeof window === "undefined") return;
 
@@ -737,14 +745,14 @@ useEffect(() => {
     const r = await loadRoom(code);
     if (!r) { setBusy(false); return setError("Room not found"); }
 
-    const existingPlayers = r.players || [];
+    const existingPlayers = Array.isArray(r.players) ? r.players : Object.values(r.players || {});
     const existingPlayer = asSpectator
       ? null
-      : existingPlayers.find(player => !player.isSpectator && player.name.trim().toLocaleLowerCase() === name.toLocaleLowerCase());
+      : existingPlayers.find(player => normalizePlayerName(player.name) === normalizePlayerName(name));
 
     if (r.status !== "lobby" && !asSpectator && !existingPlayer) {
       setBusy(false);
-      return setError("That game has already started");
+      return setError("That game has already started. Re-enter the name used when you joined to get back in.");
     }
 
     const playerId = existingPlayer?.id || myId;
